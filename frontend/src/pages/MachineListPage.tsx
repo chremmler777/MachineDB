@@ -250,9 +250,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
   const bg = darkMode ? '#111827' : '#ffffff';
   const headerBg = darkMode ? '#1f2937' : '#f3f4f6';
-  const groupBg = darkMode ? '#2d3748' : '#e5e7eb';
-  const borderColor = darkMode ? '#4b5563' : '#9ca3af'; // Darker borders for visibility
-  const textColor = darkMode ? '#1f2937' : '#111827'; // Dark text for header readability
+  const borderColor = darkMode ? '#4b5563' : '#9ca3af';
+  const textColor = darkMode ? '#1f2937' : '#111827'; // Dark text for table headers (on light pastel)
+  const uiTextColor = darkMode ? '#e5e7eb' : '#111827'; // Light text for UI controls in dark mode
   const rowEven = darkMode ? '#111827' : '#ffffff';
   const rowOdd = darkMode ? '#1a2535' : '#f9fafb';
   const rowHover = darkMode ? '#2d3748' : '#eff6ff';
@@ -262,7 +262,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
       {/* Header + filters */}
       <div style={{ marginBottom: '16px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: textColor }}>
+        <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: uiTextColor }}>
           Machines ({machines.length})
         </h2>
         {/* Row 1: Search + Plant + Manufacturer */}
@@ -272,52 +272,52 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search machine, manufacturer, model..."
-            style={{ flex: 1, padding: '7px 12px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}
+            style={{ flex: 1, padding: '7px 12px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}
           />
           <select value={plant} onChange={(e) => setPlant(e.target.value)}
-            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
             <option value="">All Plants</option>
             <option value="USA">USA</option>
             <option value="Mexico">Mexico</option>
           </select>
           <select value={manufacturer} onChange={(e) => setManufacturer(e.target.value)}
-            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
             <option value="">All Manufacturers</option>
             {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
         {/* Row 2: Clamping, Screw, 2-Shot, Robot, Rotary */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', color: textColor, opacity: 0.7 }}>Clamping (t):</span>
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7 }}>Clamping (t):</span>
           <input type="number" value={clampingMin} onChange={(e) => setClampingMin(e.target.value)} placeholder="Min"
-            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
-          <span style={{ color: textColor, opacity: 0.5 }}>–</span>
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }} />
+          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
           <input type="number" value={clampingMax} onChange={(e) => setClampingMax(e.target.value)} placeholder="Max"
-            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }} />
 
-          <span style={{ fontSize: '12px', color: textColor, opacity: 0.7, marginLeft: '8px' }}>Screw ø (mm):</span>
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Screw ø (mm):</span>
           <input type="number" value={screwMin} onChange={(e) => setScrewMin(e.target.value)} placeholder="Min"
-            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
-          <span style={{ color: textColor, opacity: 0.5 }}>–</span>
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }} />
+          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
           <input type="number" value={screwMax} onChange={(e) => setScrewMax(e.target.value)} placeholder="Max"
-            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }} />
 
           <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px', marginLeft: '8px' }}>
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px', marginLeft: '8px' }}>
             <option value="">2-Shot: All</option>
             <option value="yes">2-Shot: Yes</option>
             <option value="no">2-Shot: No</option>
           </select>
 
           <select value={hasRobot} onChange={(e) => setHasRobot(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
             <option value="">Robot: All</option>
             <option value="yes">Robot: Yes</option>
             <option value="no">Robot: No</option>
           </select>
 
           <select value={rotaryTable} onChange={(e) => setRotaryTable(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
             <option value="">Rotary: All</option>
             <option value="yes">Rotary: Yes</option>
             <option value="no">Rotary: No</option>
@@ -328,9 +328,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
       {error && <div style={{ color: 'red', marginBottom: '12px' }}>Error: {error}</div>}
 
       {loading ? (
-        <div style={{ color: textColor, padding: '16px' }}>Loading...</div>
+        <div style={{ color: uiTextColor, padding: '16px' }}>Loading...</div>
       ) : machines.length === 0 ? (
-        <div style={{ color: textColor, padding: '16px' }}>No machines found</div>
+        <div style={{ color: uiTextColor, padding: '16px' }}>No machines found</div>
       ) : (
         /* Scrollable table container */
         <div style={{
