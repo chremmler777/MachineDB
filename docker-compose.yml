@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: machinedb_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: machinedb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: machinedb_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/machinedb
+      JWT_SECRET: your-secret-key-change-in-production
+      NODE_ENV: production
+      PORT: 3001
+      FRONTEND_URL: http://localhost:5174
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data/files:/data/files
+      - /home/nitrolinux/claude/Machinelist:/data/excel
+    command: sh -c "npm run build && npm run migrate && npm start"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001/api
+    container_name: machinedb_frontend
+    ports:
+      - "5174:5173"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+
+volumes:
+  postgres_data:
