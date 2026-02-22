@@ -181,6 +181,14 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [plant, setPlant] = useState('');
+  const [manufacturer, setManufacturer] = useState('');
+  const [clampingMin, setClampingMin] = useState('');
+  const [clampingMax, setClampingMax] = useState('');
+  const [screwMin, setScrewMin] = useState('');
+  const [screwMax, setScrewMax] = useState('');
+  const [twoShot, setTwoShot] = useState('');
+  const [hasRobot, setHasRobot] = useState('');
+  const [rotaryTable, setRotaryTable] = useState('');
   const [sortKey, setSortKey] = useState<string>('internal_name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
@@ -208,6 +216,8 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     loadAll();
   }, []);
 
+  const manufacturers = [...new Set(allMachines.map((m: any) => m.manufacturer).filter(Boolean))].sort();
+
   useEffect(() => {
     let filtered = allMachines;
     if (search) {
@@ -217,10 +227,18 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
         m.model?.toLowerCase().includes(search.toLowerCase())
       );
     }
-    if (plant) {
-      filtered = filtered.filter((m: any) => m.plant_location === plant);
-    }
-    // Natural sort: handles KM 80 vs KM 1000 correctly
+    if (plant) filtered = filtered.filter((m: any) => m.plant_location === plant);
+    if (manufacturer) filtered = filtered.filter((m: any) => m.manufacturer === manufacturer);
+    if (clampingMin) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) >= toNum(clampingMin));
+    if (clampingMax) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) <= toNum(clampingMax));
+    if (screwMin) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) >= toNum(screwMin));
+    if (screwMax) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) <= toNum(screwMax));
+    if (twoShot === 'yes') filtered = filtered.filter((m: any) => m.iu2_screw_diameter_mm);
+    if (twoShot === 'no') filtered = filtered.filter((m: any) => !m.iu2_screw_diameter_mm);
+    if (hasRobot === 'yes') filtered = filtered.filter((m: any) => m.robot_manufacturer);
+    if (hasRobot === 'no') filtered = filtered.filter((m: any) => !m.robot_manufacturer);
+    if (rotaryTable === 'yes') filtered = filtered.filter((m: any) => m.rotary_table === true || m.rotary_table === 'Yes');
+    if (rotaryTable === 'no') filtered = filtered.filter((m: any) => !m.rotary_table || m.rotary_table === 'No');
     filtered = [...filtered].sort((a, b) => {
       const av = a[sortKey] ?? '';
       const bv = b[sortKey] ?? '';
@@ -228,7 +246,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
       return sortDir === 'asc' ? cmp : -cmp;
     });
     setMachines(filtered);
-  }, [search, plant, allMachines, sortKey, sortDir]);
+  }, [search, plant, manufacturer, clampingMin, clampingMax, screwMin, screwMax, twoShot, hasRobot, rotaryTable, allMachines, sortKey, sortDir]);
 
   const bg = darkMode ? '#111827' : '#ffffff';
   const headerBg = darkMode ? '#1f2937' : '#f3f4f6';
@@ -247,37 +265,62 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
         <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: textColor }}>
           Machines ({machines.length})
         </h2>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        {/* Row 1: Search + Plant + Manufacturer */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search machine, manufacturer, model..."
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              border: `1px solid ${borderColor}`,
-              borderRadius: '6px',
-              backgroundColor: headerBg,
-              color: textColor,
-              fontSize: '14px',
-            }}
+            style={{ flex: 1, padding: '7px 12px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}
           />
-          <select
-            value={plant}
-            onChange={(e) => setPlant(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: `1px solid ${borderColor}`,
-              borderRadius: '6px',
-              backgroundColor: headerBg,
-              color: textColor,
-              fontSize: '14px',
-            }}
-          >
+          <select value={plant} onChange={(e) => setPlant(e.target.value)}
+            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
             <option value="">All Plants</option>
             <option value="USA">USA</option>
             <option value="Mexico">Mexico</option>
+          </select>
+          <select value={manufacturer} onChange={(e) => setManufacturer(e.target.value)}
+            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            <option value="">All Manufacturers</option>
+            {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        {/* Row 2: Clamping, Screw, 2-Shot, Robot, Rotary */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: textColor, opacity: 0.7 }}>Clamping (t):</span>
+          <input type="number" value={clampingMin} onChange={(e) => setClampingMin(e.target.value)} placeholder="Min"
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
+          <span style={{ color: textColor, opacity: 0.5 }}>–</span>
+          <input type="number" value={clampingMax} onChange={(e) => setClampingMax(e.target.value)} placeholder="Max"
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
+
+          <span style={{ fontSize: '12px', color: textColor, opacity: 0.7, marginLeft: '8px' }}>Screw ø (mm):</span>
+          <input type="number" value={screwMin} onChange={(e) => setScrewMin(e.target.value)} placeholder="Min"
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
+          <span style={{ color: textColor, opacity: 0.5 }}>–</span>
+          <input type="number" value={screwMax} onChange={(e) => setScrewMax(e.target.value)} placeholder="Max"
+            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }} />
+
+          <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px', marginLeft: '8px' }}>
+            <option value="">2-Shot: All</option>
+            <option value="yes">2-Shot: Yes</option>
+            <option value="no">2-Shot: No</option>
+          </select>
+
+          <select value={hasRobot} onChange={(e) => setHasRobot(e.target.value)}
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            <option value="">Robot: All</option>
+            <option value="yes">Robot: Yes</option>
+            <option value="no">Robot: No</option>
+          </select>
+
+          <select value={rotaryTable} onChange={(e) => setRotaryTable(e.target.value)}
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: textColor, fontSize: '13px' }}>
+            <option value="">Rotary: All</option>
+            <option value="yes">Rotary: Yes</option>
+            <option value="no">Rotary: No</option>
           </select>
         </div>
       </div>
