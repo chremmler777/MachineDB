@@ -40,7 +40,7 @@ const COLUMN_GROUPS = [
     group: 'Clamping Unit',
     color: 'rgba(255, 255, 153, 1)', // Soft Yellow
     columns: [
-      { key: 'clamping_force_kn', label: 'Force (kN)' },
+      { key: 'clamping_force_kn', label: 'Clamping (t)' },
       { key: 'centering_ring_nozzle_mm', label: 'Center Nozzle (mm)' },
       { key: 'centering_ring_ejector_mm', label: 'Center Ejector (mm)' },
       { key: 'fine_centering', label: 'Fine Center' },
@@ -100,7 +100,7 @@ const COLUMN_GROUPS = [
   },
   {
     group: 'Injection Unit 2',
-    color: 'rgba(152, 251, 152, 1)', // Soft Mint
+    color: 'rgba(255, 130, 130, 1)', // Soft Red
     columns: [
       { key: 'iu2_screw_diameter_mm', label: 'Screw (mm)' },
       { key: 'iu2_shot_volume_cm3', label: 'Shot (cm³)' },
@@ -181,6 +181,17 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [plant, setPlant] = useState('');
+  const [sortKey, setSortKey] = useState<string>('internal_name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
 
   useEffect(() => {
     const loadAll = async () => {
@@ -209,8 +220,15 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     if (plant) {
       filtered = filtered.filter((m: any) => m.plant_location === plant);
     }
+    // Natural sort: handles KM 80 vs KM 1000 correctly
+    filtered = [...filtered].sort((a, b) => {
+      const av = a[sortKey] ?? '';
+      const bv = b[sortKey] ?? '';
+      const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
     setMachines(filtered);
-  }, [search, plant, allMachines]);
+  }, [search, plant, allMachines, sortKey, sortDir]);
 
   const bg = darkMode ? '#111827' : '#ffffff';
   const headerBg = darkMode ? '#1f2937' : '#f3f4f6';
@@ -313,9 +331,11 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                 {COLUMNS.map((col, colIdx) => {
                   const colGroup = COLUMN_GROUPS.find(g => g.columns.some(c => c.key === col.key));
                   const colColor = colGroup ? colGroup.color : 'rgba(200, 200, 200, 1)';
+                  const isActive = sortKey === col.key;
                   return (
                     <th
                       key={col.key}
+                      onClick={() => handleSort(col.key)}
                       style={{
                         padding: '8px 6px',
                         textAlign: 'center',
@@ -325,10 +345,16 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                         borderRight: `1px solid #555555`,
                         backgroundColor: getHeaderColor(colColor),
                         color: '#000000',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        whiteSpace: 'nowrap',
                         ...(colIdx === 0 ? { position: 'sticky', left: 0, zIndex: 4 } : {})
                       }}
                     >
                       {col.label}
+                      <span style={{ marginLeft: '4px', opacity: isActive ? 1 : 0.3, fontSize: '9px' }}>
+                        {isActive ? (sortDir === 'asc' ? '▲' : '▼') : '▲'}
+                      </span>
                     </th>
                   );
                 })}
