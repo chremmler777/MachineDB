@@ -100,6 +100,7 @@ const migrations = [
 
     -- Meta
     special_controls TEXT,
+    mucell BOOLEAN DEFAULT FALSE,
     remarks TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

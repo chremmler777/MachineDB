@@ -184,7 +184,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [manufacturer, setManufacturer] = useState('');
   const [clampingMin, setClampingMin] = useState('');
   const [clampingMax, setClampingMax] = useState('');
-  const [screwDiameter, setScrewDiameter] = useState('');
+  const [screwMin, setScrewMin] = useState('');
+  const [screwMax, setScrewMax] = useState('');
+  const [muCell, setMuCell] = useState('');
   const [twoShot, setTwoShot] = useState('');
   const [hasRobot, setHasRobot] = useState('');
   const [rotaryTable, setRotaryTable] = useState('');
@@ -218,6 +220,8 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const manufacturers = [...new Set(allMachines.map((m: any) => m.manufacturer).filter(Boolean))].sort();
   const screwDiameters = [...new Set(allMachines.map((m: any) => m.iu1_screw_diameter_mm).filter(Boolean))]
     .map(Number).sort((a, b) => a - b);
+  const clampingValues = [...new Set(allMachines.map((m: any) => m.clamping_force_kn).filter(Boolean))]
+    .map(Number).sort((a, b) => a - b);
 
   useEffect(() => {
     let filtered = allMachines;
@@ -232,7 +236,10 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     if (manufacturer) filtered = filtered.filter((m: any) => m.manufacturer === manufacturer);
     if (clampingMin) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) >= toNum(clampingMin));
     if (clampingMax) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) <= toNum(clampingMax));
-    if (screwDiameter) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) === toNum(screwDiameter));
+    if (screwMin) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) >= toNum(screwMin));
+    if (screwMax) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) <= toNum(screwMax));
+    if (muCell === 'yes') filtered = filtered.filter((m: any) => m.mucell === true);
+    if (muCell === 'no') filtered = filtered.filter((m: any) => !m.mucell);
     if (twoShot === 'yes') filtered = filtered.filter((m: any) => m.iu2_screw_diameter_mm);
     if (twoShot === 'no') filtered = filtered.filter((m: any) => !m.iu2_screw_diameter_mm);
     if (hasRobot === 'yes') filtered = filtered.filter((m: any) => m.robot_manufacturer);
@@ -246,7 +253,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
       return sortDir === 'asc' ? cmp : -cmp;
     });
     setMachines(filtered);
-  }, [search, plant, manufacturer, clampingMin, clampingMax, screwDiameter, twoShot, hasRobot, rotaryTable, allMachines, sortKey, sortDir]);
+  }, [search, plant, manufacturer, clampingMin, clampingMax, screwMin, screwMax, muCell, twoShot, hasRobot, rotaryTable, allMachines, sortKey, sortDir]);
 
   const bg = darkMode ? '#111827' : '#ffffff';
   const headerBg = darkMode ? '#1f2937' : '#f3f4f6';
@@ -286,19 +293,32 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
-        {/* Row 2: Clamping, Screw, 2-Shot, Robot, Rotary */}
+        {/* Row 2: Clamping, Screw, 2-Shot, Robot, Rotary, MuCell */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7 }}>Clamping (t):</span>
-          <input type="number" value={clampingMin} onChange={(e) => setClampingMin(e.target.value)} placeholder="Min"
-            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }} />
+          <select value={clampingMin} onChange={(e) => setClampingMin(e.target.value)}
+            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">Min</option>
+            {clampingValues.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
           <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <input type="number" value={clampingMax} onChange={(e) => setClampingMax(e.target.value)} placeholder="Max"
-            style={{ width: '70px', padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }} />
+          <select value={clampingMax} onChange={(e) => setClampingMax(e.target.value)}
+            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">Max</option>
+            {clampingValues.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
 
-          <select value={screwDiameter} onChange={(e) => setScrewDiameter(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px', marginLeft: '8px' }}>
-            <option value="">Screw ø: All</option>
-            {screwDiameters.map(d => <option key={d} value={d}>{d} mm</option>)}
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Screw ø (mm):</span>
+          <select value={screwMin} onChange={(e) => setScrewMin(e.target.value)}
+            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">Min</option>
+            {screwDiameters.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
+          <select value={screwMax} onChange={(e) => setScrewMax(e.target.value)}
+            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">Max</option>
+            {screwDiameters.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
 
           <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
@@ -320,6 +340,13 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             <option value="">Rotary: All</option>
             <option value="yes">Rotary: Yes</option>
             <option value="no">Rotary: No</option>
+          </select>
+
+          <select value={muCell} onChange={(e) => setMuCell(e.target.value)}
+            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">MuCell: All</option>
+            <option value="yes">MuCell: Yes</option>
+            <option value="no">MuCell: No</option>
           </select>
         </div>
       </div>
