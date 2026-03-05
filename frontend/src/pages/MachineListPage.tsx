@@ -189,9 +189,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [screw2Min, setScrew2Min] = useState('');
   const [screw2Max, setScrew2Max] = useState('');
   const [vol1Min, setVol1Min] = useState(0);
-  const [vol1Max, setVol1Max] = useState(6786);
+  const [vol1Max, setVol1Max] = useState(7000);
   const [vol2Min, setVol2Min] = useState(0);
-  const [vol2Max, setVol2Max] = useState(505);
+  const [vol2Max, setVol2Max] = useState(500);
   const [muCell, setMuCell] = useState('');
   const [twoShot, setTwoShot] = useState('');
   const [hasRobot, setHasRobot] = useState('');
@@ -230,8 +230,10 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     .map(Number).sort((a, b) => a - b);
   const clampingValues = [...new Set(allMachines.map((m: any) => m.clamping_force_kn).filter(Boolean))]
     .map(Number).sort((a, b) => a - b);
-  const VOL1_MAX = 6786;
-  const VOL2_MAX = 505;
+  const VOL1_MAX = 7000;
+  const VOL1_STEP = 100;
+  const VOL2_MAX = 500;
+  const VOL2_STEP = 25;
 
   useEffect(() => {
     let filtered = allMachines;
@@ -314,8 +316,8 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
               setClampingMin(''); setClampingMax('');
               setScrewMin(''); setScrewMax('');
               setScrew2Min(''); setScrew2Max('');
-              setVol1Min(0); setVol1Max(VOL1_MAX);
-              setVol2Min(0); setVol2Max(VOL2_MAX);
+              setVol1Min(0); setVol1Max(7000);
+              setVol2Min(0); setVol2Max(500);
               setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
             }}
             style={{ padding: '7px 14px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: '#ef4444', color: '#fff', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
@@ -394,27 +396,27 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
 
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Shot Vol 1 (cm³):</span>
-          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol1Min}</span>
-          <input type="range" min={0} max={VOL1_MAX} step={50} value={vol1Min}
-            onChange={(e) => setVol1Min(Math.min(Number(e.target.value), vol1Max - 50))}
-            style={{ width: '100px', accentColor: '#3b82f6' }} />
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Volume Injection 1 (cm³):</span>
+          <span style={{ fontSize: '12px', color: uiTextColor, minWidth: '36px', textAlign: 'right' }}>{vol1Min}</span>
+          <input type="range" min={0} max={VOL1_MAX} step={VOL1_STEP} value={vol1Min}
+            onChange={(e) => setVol1Min(Math.min(Number(e.target.value), vol1Max - VOL1_STEP))}
+            style={{ width: '120px', accentColor: '#3b82f6' }} />
           <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <input type="range" min={0} max={VOL1_MAX} step={50} value={vol1Max}
-            onChange={(e) => setVol1Max(Math.max(Number(e.target.value), vol1Min + 50))}
-            style={{ width: '100px', accentColor: '#3b82f6' }} />
-          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol1Max}</span>
+          <input type="range" min={0} max={VOL1_MAX} step={VOL1_STEP} value={vol1Max}
+            onChange={(e) => setVol1Max(Math.max(Number(e.target.value), vol1Min + VOL1_STEP))}
+            style={{ width: '120px', accentColor: '#3b82f6' }} />
+          <span style={{ fontSize: '12px', color: uiTextColor, minWidth: '36px' }}>{vol1Max}</span>
 
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Shot Vol 2 (cm³):</span>
-          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol2Min}</span>
-          <input type="range" min={0} max={VOL2_MAX} step={10} value={vol2Min}
-            onChange={(e) => setVol2Min(Math.min(Number(e.target.value), vol2Max - 10))}
-            style={{ width: '100px', accentColor: '#3b82f6' }} />
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Volume Injection 2 (cm³):</span>
+          <span style={{ fontSize: '12px', color: uiTextColor, minWidth: '30px', textAlign: 'right' }}>{vol2Min}</span>
+          <input type="range" min={0} max={VOL2_MAX} step={VOL2_STEP} value={vol2Min}
+            onChange={(e) => setVol2Min(Math.min(Number(e.target.value), vol2Max - VOL2_STEP))}
+            style={{ width: '120px', accentColor: '#3b82f6' }} />
           <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <input type="range" min={0} max={VOL2_MAX} step={10} value={vol2Max}
-            onChange={(e) => setVol2Max(Math.max(Number(e.target.value), vol2Min + 10))}
-            style={{ width: '100px', accentColor: '#3b82f6' }} />
-          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol2Max}</span>
+          <input type="range" min={0} max={VOL2_MAX} step={VOL2_STEP} value={vol2Max}
+            onChange={(e) => setVol2Max(Math.max(Number(e.target.value), vol2Min + VOL2_STEP))}
+            style={{ width: '120px', accentColor: '#3b82f6' }} />
+          <span style={{ fontSize: '12px', color: uiTextColor, minWidth: '30px' }}>{vol2Max}</span>
         </div>
       </div>
 
