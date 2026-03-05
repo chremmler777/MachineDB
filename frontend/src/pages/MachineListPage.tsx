@@ -186,6 +186,12 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [clampingMax, setClampingMax] = useState('');
   const [screwMin, setScrewMin] = useState('');
   const [screwMax, setScrewMax] = useState('');
+  const [screw2Min, setScrew2Min] = useState('');
+  const [screw2Max, setScrew2Max] = useState('');
+  const [vol1Min, setVol1Min] = useState(0);
+  const [vol1Max, setVol1Max] = useState(6786);
+  const [vol2Min, setVol2Min] = useState(0);
+  const [vol2Max, setVol2Max] = useState(505);
   const [muCell, setMuCell] = useState('');
   const [twoShot, setTwoShot] = useState('');
   const [hasRobot, setHasRobot] = useState('');
@@ -220,8 +226,12 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const manufacturers = [...new Set(allMachines.map((m: any) => m.manufacturer).filter(Boolean))].sort();
   const screwDiameters = [...new Set(allMachines.map((m: any) => m.iu1_screw_diameter_mm).filter(Boolean))]
     .map(Number).sort((a, b) => a - b);
+  const screw2Diameters = [...new Set(allMachines.map((m: any) => m.iu2_screw_diameter_mm).filter(Boolean))]
+    .map(Number).sort((a, b) => a - b);
   const clampingValues = [...new Set(allMachines.map((m: any) => m.clamping_force_kn).filter(Boolean))]
     .map(Number).sort((a, b) => a - b);
+  const VOL1_MAX = 6786;
+  const VOL2_MAX = 505;
 
   useEffect(() => {
     let filtered = allMachines;
@@ -238,6 +248,12 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     if (clampingMax) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) <= toNum(clampingMax));
     if (screwMin) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) >= toNum(screwMin));
     if (screwMax) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) <= toNum(screwMax));
+    if (screw2Min) filtered = filtered.filter((m: any) => toNum(m.iu2_screw_diameter_mm) >= toNum(screw2Min));
+    if (screw2Max) filtered = filtered.filter((m: any) => toNum(m.iu2_screw_diameter_mm) <= toNum(screw2Max));
+    if (vol1Min > 0) filtered = filtered.filter((m: any) => toNum(m.iu1_shot_volume_cm3) >= vol1Min);
+    if (vol1Max < VOL1_MAX) filtered = filtered.filter((m: any) => toNum(m.iu1_shot_volume_cm3) <= vol1Max);
+    if (vol2Min > 0) filtered = filtered.filter((m: any) => toNum(m.iu2_shot_volume_cm3) >= vol2Min);
+    if (vol2Max < VOL2_MAX) filtered = filtered.filter((m: any) => toNum(m.iu2_shot_volume_cm3) <= vol2Max);
     if (muCell === 'yes') filtered = filtered.filter((m: any) => m.mucell === true);
     if (muCell === 'no') filtered = filtered.filter((m: any) => !m.mucell);
     if (twoShot === 'yes') filtered = filtered.filter((m: any) => m.iu2_screw_diameter_mm);
@@ -253,7 +269,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
       return sortDir === 'asc' ? cmp : -cmp;
     });
     setMachines(filtered);
-  }, [search, plant, manufacturer, clampingMin, clampingMax, screwMin, screwMax, muCell, twoShot, hasRobot, rotaryTable, allMachines, sortKey, sortDir]);
+  }, [search, plant, manufacturer, clampingMin, clampingMax, screwMin, screwMax, screw2Min, screw2Max, vol1Min, vol1Max, vol2Min, vol2Max, muCell, twoShot, hasRobot, rotaryTable, allMachines, sortKey, sortDir]);
 
   const bg = darkMode ? '#111827' : '#ffffff';
   const headerBg = darkMode ? '#1f2937' : '#f3f4f6';
@@ -297,6 +313,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
               setSearch(''); setPlant(''); setManufacturer('');
               setClampingMin(''); setClampingMax('');
               setScrewMin(''); setScrewMax('');
+              setScrew2Min(''); setScrew2Max('');
+              setVol1Min(0); setVol1Max(VOL1_MAX);
+              setVol2Min(0); setVol2Max(VOL2_MAX);
               setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
             }}
             style={{ padding: '7px 14px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: '#ef4444', color: '#fff', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
@@ -359,6 +378,43 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             <option value="yes">MuCell: Yes</option>
             <option value="no">MuCell: No</option>
           </select>
+        </div>
+        {/* Row 3: IU2 Screw + Shot Volume sliders */}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7 }}>IU2 Screw ø (mm):</span>
+          <select value={screw2Min} onChange={(e) => setScrew2Min(e.target.value)}
+            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">Min</option>
+            {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
+          <select value={screw2Max} onChange={(e) => setScrew2Max(e.target.value)}
+            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
+            <option value="">Max</option>
+            {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Shot Vol 1 (cm³):</span>
+          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol1Min}</span>
+          <input type="range" min={0} max={VOL1_MAX} step={50} value={vol1Min}
+            onChange={(e) => setVol1Min(Math.min(Number(e.target.value), vol1Max - 50))}
+            style={{ width: '100px', accentColor: '#3b82f6' }} />
+          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
+          <input type="range" min={0} max={VOL1_MAX} step={50} value={vol1Max}
+            onChange={(e) => setVol1Max(Math.max(Number(e.target.value), vol1Min + 50))}
+            style={{ width: '100px', accentColor: '#3b82f6' }} />
+          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol1Max}</span>
+
+          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Shot Vol 2 (cm³):</span>
+          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol2Min}</span>
+          <input type="range" min={0} max={VOL2_MAX} step={10} value={vol2Min}
+            onChange={(e) => setVol2Min(Math.min(Number(e.target.value), vol2Max - 10))}
+            style={{ width: '100px', accentColor: '#3b82f6' }} />
+          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
+          <input type="range" min={0} max={VOL2_MAX} step={10} value={vol2Max}
+            onChange={(e) => setVol2Max(Math.max(Number(e.target.value), vol2Min + 10))}
+            style={{ width: '100px', accentColor: '#3b82f6' }} />
+          <span style={{ fontSize: '12px', color: uiTextColor }}>{vol2Max}</span>
         </div>
       </div>
 
