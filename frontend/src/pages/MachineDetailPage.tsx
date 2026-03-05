@@ -78,6 +78,12 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
   if (loading) return <div style={{ padding: '24px', color: textPrimary }}>Loading...</div>;
   if (!machine) return <div style={{ padding: '24px', color: textPrimary }}>Machine not found</div>;
 
+  const scrollContainer: React.CSSProperties = {
+    height: 'calc(100vh - 64px)',
+    overflowY: 'auto',
+    backgroundColor: bg,
+  };
+
   const sections = [
     {
       title: 'Dimensions',
@@ -193,7 +199,8 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
   });
 
   return (
-    <div style={{ padding: '24px', backgroundColor: bg, minHeight: '100vh', color: textPrimary }}>
+    <div style={scrollContainer}>
+    <div style={{ padding: '24px', color: textPrimary }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: textPrimary }}>{machine.internal_name}</h2>
@@ -316,6 +323,7 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
           )}
         </div>
       )}
+    </div>
     </div>
   );
 };
