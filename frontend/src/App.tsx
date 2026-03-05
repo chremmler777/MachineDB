@@ -113,7 +113,7 @@ const AppContent: React.FC = () => {
 
       {route.page === 'dashboard' && <DashboardPage darkMode={darkMode} />}
       {route.page === 'machines' && <MachineListPage onNavigate={navigate} darkMode={darkMode} />}
-      {route.page === 'machine' && <MachineDetailPage machineId={route.params} onNavigate={navigate} />}
+      {route.page === 'machine' && <MachineDetailPage machineId={route.params} onNavigate={navigate} darkMode={darkMode} />}
       {route.page === 'finder' && <MachineFinder onNavigate={navigate} />}
       {route.page === 'admin' && user.role === 'master' && <AdminPanel />}
     </div>
