@@ -272,7 +272,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
         <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: uiTextColor }}>
           Machines ({machines.length})
         </h2>
-        {/* Row 1: Search + Plant + Manufacturer */}
+        {/* Row 1: Search + Plant + Manufacturer + Clear */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           <input
             type="text"
@@ -292,6 +292,17 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             <option value="">All Manufacturers</option>
             {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
+          <button
+            onClick={() => {
+              setSearch(''); setPlant(''); setManufacturer('');
+              setClampingMin(''); setClampingMax('');
+              setScrewMin(''); setScrewMax('');
+              setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
+            }}
+            style={{ padding: '7px 14px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: '#ef4444', color: '#fff', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            Clear Filters
+          </button>
         </div>
         {/* Row 2: Clamping, Screw, 2-Shot, Robot, Rotary, MuCell */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
