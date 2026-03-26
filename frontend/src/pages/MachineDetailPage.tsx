@@ -8,10 +8,10 @@ interface MachineDetailPageProps {
   darkMode?: boolean;
 }
 
-const field = (label: string, value: any, unit?: string) => {
+const field = (label: string, dbKey: string, value: any, unit?: string) => {
   if (value === null || value === undefined || value === '') return null;
   const display = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : `${value}${unit ? ' ' + unit : ''}`;
-  return { label, display };
+  return { label, key: dbKey, display };
 };
 
 export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId, onNavigate, darkMode = true }) => {
@@ -84,105 +84,107 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
     backgroundColor: bg,
   };
 
+  const suspFields: string[] = Array.isArray(machine.suspicious_fields) ? machine.suspicious_fields : [];
+
   const sections = [
     {
       title: 'Dimensions',
       rows: [
-        field('Length', machine.length_mm, 'mm'),
-        field('Width', machine.width_mm, 'mm'),
-        field('Height', machine.height_mm, 'mm'),
-        field('Weight', machine.weight_kg, 'kg'),
+        field('Length', 'length_mm', machine.length_mm, 'mm'),
+        field('Width', 'width_mm', machine.width_mm, 'mm'),
+        field('Height', 'height_mm', machine.height_mm, 'mm'),
+        field('Weight', 'weight_kg', machine.weight_kg, 'kg'),
       ]
     },
     {
       title: 'Clamping Unit',
       rows: [
-        field('Clamping Force', machine.clamping_force_kn, 't'),
-        field('Centering Ring Nozzle', machine.centering_ring_nozzle_mm, 'mm'),
-        field('Centering Ring Ejector', machine.centering_ring_ejector_mm, 'mm'),
-        field('Fine Centering', machine.fine_centering),
-        field('Mold Height Min', machine.mold_height_min_mm, 'mm'),
-        field('Mold Height Max', machine.mold_height_max_mm, 'mm'),
-        field('Opening Stroke', machine.opening_stroke_mm, 'mm'),
-        field('Clearance H', machine.clearance_horizontal_mm, 'mm'),
-        field('Clearance V', machine.clearance_vertical_mm, 'mm'),
-        field('Rotary Table', machine.rotary_table),
-        field('Max Weight Ejector', machine.max_weight_ejector_kg, 'kg'),
+        field('Clamping Force', 'clamping_force_kn', machine.clamping_force_kn, 't'),
+        field('Centering Ring Nozzle', 'centering_ring_nozzle_mm', machine.centering_ring_nozzle_mm, 'mm'),
+        field('Centering Ring Ejector', 'centering_ring_ejector_mm', machine.centering_ring_ejector_mm, 'mm'),
+        field('Fine Centering', 'fine_centering', machine.fine_centering),
+        field('Mold Height Min', 'mold_height_min_mm', machine.mold_height_min_mm, 'mm'),
+        field('Mold Height Max', 'mold_height_max_mm', machine.mold_height_max_mm, 'mm'),
+        field('Opening Stroke', 'opening_stroke_mm', machine.opening_stroke_mm, 'mm'),
+        field('Clearance H', 'clearance_horizontal_mm', machine.clearance_horizontal_mm, 'mm'),
+        field('Clearance V', 'clearance_vertical_mm', machine.clearance_vertical_mm, 'mm'),
+        field('Rotary Table', 'rotary_table', machine.rotary_table),
+        field('Max Weight Ejector', 'max_weight_ejector_kg', machine.max_weight_ejector_kg, 'kg'),
       ]
     },
     {
       title: 'Tool Connections',
       rows: [
-        field('Temp Control Circuits', machine.temperature_control_circuits),
-        field('Cascade', machine.cascade_count),
-        field('Hot Runner Integrated', machine.hot_runner_integrated),
-        field('Hot Runner External', machine.hot_runner_external),
-        field('Core Pulls Nozzle', machine.core_pulls_nozzle),
-        field('Core Pulls Ejector', machine.core_pulls_ejector),
-        field('Pneumatic Nozzle', machine.pneumatic_nozzle),
-        field('Pneumatic Ejector', machine.pneumatic_ejector),
-        field('Ejector Stroke', machine.ejector_stroke_mm, 'mm'),
-        field('Ejector Thread', machine.ejector_thread),
-        field('Ejector Max Travel', machine.ejector_max_travel_mm, 'mm'),
+        field('Temp Control Circuits', 'temperature_control_circuits', machine.temperature_control_circuits),
+        field('Cascade', 'cascade_count', machine.cascade_count),
+        field('Hot Runner Integrated', 'hot_runner_integrated', machine.hot_runner_integrated),
+        field('Hot Runner External', 'hot_runner_external', machine.hot_runner_external),
+        field('Core Pulls Nozzle', 'core_pulls_nozzle', machine.core_pulls_nozzle),
+        field('Core Pulls Ejector', 'core_pulls_ejector', machine.core_pulls_ejector),
+        field('Pneumatic Nozzle', 'pneumatic_nozzle', machine.pneumatic_nozzle),
+        field('Pneumatic Ejector', 'pneumatic_ejector', machine.pneumatic_ejector),
+        field('Ejector Stroke', 'ejector_stroke_mm', machine.ejector_stroke_mm, 'mm'),
+        field('Ejector Thread', 'ejector_thread', machine.ejector_thread),
+        field('Ejector Max Travel', 'ejector_max_travel_mm', machine.ejector_max_travel_mm, 'mm'),
       ]
     },
     {
       title: 'Interfaces',
       rows: [
-        field('Mech Interface Tool', machine.mechanical_interface_tool),
-        field('Mech Interface Robot', machine.mechanical_interface_robot),
-        field('Elec Interface Tool', machine.electrical_interface_tool),
-        field('Elec Interface Hot Runner', machine.electrical_interface_hotrunner),
-        field('Elec Interface Ejector', machine.electrical_interface_ejector),
-        field('Elec Interface Core Pull', machine.electrical_interface_corepull),
-        field('Elec Interface Robot', machine.electrical_interface_robot),
+        field('Mech Interface Tool', 'mechanical_interface_tool', machine.mechanical_interface_tool),
+        field('Mech Interface Robot', 'mechanical_interface_robot', machine.mechanical_interface_robot),
+        field('Elec Interface Tool', 'electrical_interface_tool', machine.electrical_interface_tool),
+        field('Elec Interface Hot Runner', 'electrical_interface_hotrunner', machine.electrical_interface_hotrunner),
+        field('Elec Interface Ejector', 'electrical_interface_ejector', machine.electrical_interface_ejector),
+        field('Elec Interface Core Pull', 'electrical_interface_corepull', machine.electrical_interface_corepull),
+        field('Elec Interface Robot', 'electrical_interface_robot', machine.electrical_interface_robot),
       ]
     },
     {
       title: 'Injection Unit 1',
       rows: [
-        field('Screw Diameter', machine.iu1_screw_diameter_mm, 'mm'),
-        field('Shot Volume', machine.iu1_shot_volume_cm3, 'cm³'),
-        field('Injection Flow', machine.iu1_injection_flow_cm3s, 'cm³/s'),
-        field('Plasticizing Rate', machine.iu1_plasticizing_rate_gs, 'g/s'),
-        field('L/D Ratio', machine.iu1_ld_ratio),
-        field('Injection Pressure', machine.iu1_injection_pressure_bar, 'bar'),
-        field('Shot Weight', machine.iu1_shot_weight_g, 'g'),
-        field('Screw Type', machine.iu1_screw_type),
-        field('Nozzle', machine.iu1_nozzle),
+        field('Screw Diameter', 'iu1_screw_diameter_mm', machine.iu1_screw_diameter_mm, 'mm'),
+        field('Shot Volume', 'iu1_shot_volume_cm3', machine.iu1_shot_volume_cm3, 'cm³'),
+        field('Injection Flow', 'iu1_injection_flow_cm3s', machine.iu1_injection_flow_cm3s, 'cm³/s'),
+        field('Plasticizing Rate', 'iu1_plasticizing_rate_gs', machine.iu1_plasticizing_rate_gs, 'g/s'),
+        field('L/D Ratio', 'iu1_ld_ratio', machine.iu1_ld_ratio),
+        field('Injection Pressure', 'iu1_injection_pressure_bar', machine.iu1_injection_pressure_bar, 'bar'),
+        field('Shot Weight', 'iu1_shot_weight_g', machine.iu1_shot_weight_g, 'g'),
+        field('Screw Type', 'iu1_screw_type', machine.iu1_screw_type),
+        field('Nozzle', 'iu1_nozzle', machine.iu1_nozzle),
       ]
     },
     ...(machine.iu2_screw_diameter_mm ? [{
       title: 'Injection Unit 2',
       rows: [
-        field('Screw Diameter', machine.iu2_screw_diameter_mm, 'mm'),
-        field('Shot Volume', machine.iu2_shot_volume_cm3, 'cm³'),
-        field('Injection Flow', machine.iu2_injection_flow_cm3s, 'cm³/s'),
-        field('Plasticizing Rate', machine.iu2_plasticizing_rate_gs, 'g/s'),
-        field('L/D Ratio', machine.iu2_ld_ratio),
-        field('Injection Pressure', machine.iu2_injection_pressure_bar, 'bar'),
-        field('Shot Weight', machine.iu2_shot_weight_g, 'g'),
-        field('Screw Type', machine.iu2_screw_type),
-        field('Nozzle', machine.iu2_nozzle),
+        field('Screw Diameter', 'iu2_screw_diameter_mm', machine.iu2_screw_diameter_mm, 'mm'),
+        field('Shot Volume', 'iu2_shot_volume_cm3', machine.iu2_shot_volume_cm3, 'cm³'),
+        field('Injection Flow', 'iu2_injection_flow_cm3s', machine.iu2_injection_flow_cm3s, 'cm³/s'),
+        field('Plasticizing Rate', 'iu2_plasticizing_rate_gs', machine.iu2_plasticizing_rate_gs, 'g/s'),
+        field('L/D Ratio', 'iu2_ld_ratio', machine.iu2_ld_ratio),
+        field('Injection Pressure', 'iu2_injection_pressure_bar', machine.iu2_injection_pressure_bar, 'bar'),
+        field('Shot Weight', 'iu2_shot_weight_g', machine.iu2_shot_weight_g, 'g'),
+        field('Screw Type', 'iu2_screw_type', machine.iu2_screw_type),
+        field('Nozzle', 'iu2_nozzle', machine.iu2_nozzle),
       ]
     }] : []),
     ...(machine.robot_manufacturer ? [{
       title: 'Robot',
       rows: [
-        field('Manufacturer', machine.robot_manufacturer),
-        field('Model', machine.robot_model),
-        field('Serial', machine.robot_serial),
-        field('Vacuum Circuits', machine.robot_vacuum_circuits),
-        field('Air Circuits', machine.robot_air_circuits),
-        field('Electrical Signals', machine.robot_electrical_signals),
+        field('Manufacturer', 'robot_manufacturer', machine.robot_manufacturer),
+        field('Model', 'robot_model', machine.robot_model),
+        field('Serial', 'robot_serial', machine.robot_serial),
+        field('Vacuum Circuits', 'robot_vacuum_circuits', machine.robot_vacuum_circuits),
+        field('Air Circuits', 'robot_air_circuits', machine.robot_air_circuits),
+        field('Electrical Signals', 'robot_electrical_signals', machine.robot_electrical_signals),
       ]
     }] : []),
     {
       title: 'Additional Info',
       rows: [
-        field('Special Controls', machine.special_controls),
-        field('MuCell', machine.mucell),
-        field('Remarks', machine.remarks),
+        field('Special Controls', 'special_controls', machine.special_controls),
+        field('MuCell', 'mucell', machine.mucell),
+        field('Remarks', 'remarks', machine.remarks),
       ]
     },
   ];
@@ -211,6 +213,16 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
           ← Back
         </button>
       </div>
+
+      {/* Suspicious warning banner */}
+      {suspFields.length > 0 && (
+        <div style={{ backgroundColor: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.5)', borderRadius: '8px', padding: '10px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: '#f97316', fontSize: '16px' }}>⚑</span>
+          <span style={{ color: '#c2410c', fontSize: '13px', fontWeight: '600' }}>
+            {suspFields.length} field{suspFields.length !== 1 ? 's' : ''} flagged as suspicious / needs validation: {suspFields.join(', ')}
+          </span>
+        </div>
+      )}
 
       {/* Summary card */}
       <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
@@ -242,19 +254,24 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
       {tab === 'specs' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
           {sections.map(({ title, rows }) => {
-            const filled = rows.filter(Boolean) as { label: string; display: string }[];
+            const filled = rows.filter(Boolean) as { label: string; key: string; display: string }[];
             if (filled.length === 0) return null;
             return (
               <div key={title} style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '16px' }}>
                 <h3 style={{ fontWeight: '700', fontSize: '14px', marginBottom: '12px', color: textPrimary, borderBottom: `1px solid ${borderColor}`, paddingBottom: '8px' }}>{title}</h3>
                 <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
                   <tbody>
-                    {filled.map(({ label, display }) => (
-                      <tr key={label} style={{ borderBottom: `1px solid ${borderColor}` }}>
-                        <td style={{ padding: '6px 0', color: textSecondary, width: '55%' }}>{label}</td>
-                        <td style={{ padding: '6px 0', color: textPrimary, fontWeight: '500', textAlign: 'right' }}>{display}</td>
+                    {filled.map(({ label, key, display }) => {
+                      const isSusp = suspFields.includes(key);
+                      return (
+                      <tr key={label} style={{ borderBottom: `1px solid ${borderColor}`, backgroundColor: isSusp ? 'rgba(251, 146, 60, 0.12)' : 'transparent' }}>
+                        <td style={{ padding: '6px 4px', color: isSusp ? '#c2410c' : textSecondary, width: '55%', fontWeight: isSusp ? '600' : '400' }}>
+                          {isSusp && <span style={{ marginRight: '4px' }}>⚑</span>}{label}
+                        </td>
+                        <td style={{ padding: '6px 4px', color: isSusp ? '#c2410c' : textPrimary, fontWeight: '500', textAlign: 'right' }}>{display}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -313,7 +330,7 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
                     <div>
                       <div style={{ fontWeight: '500', color: textPrimary }}>Revision {rev.revision_number}</div>
                       <div style={{ fontSize: '12px', color: textSecondary }}>{rev.change_type?.toUpperCase()}</div>
-                      <div style={{ fontSize: '11px', color: textSecondary, marginTop: '4px' }}>{new Date(rev.changed_at).toLocaleString()} by {rev.username || 'Unknown'}</div>
+                      <div style={{ fontSize: '11px', color: textSecondary, marginTop: '4px' }}>{new Date(rev.changed_at).toLocaleString()}{rev.username ? ` by ${rev.username}` : ''}</div>
                     </div>
                     <div style={{ fontSize: '13px', color: textPrimary }}>{rev.change_summary}</div>
                   </div>

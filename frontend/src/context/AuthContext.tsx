@@ -2,16 +2,14 @@ import React, { createContext, useState, useEffect } from 'react';
 import { authService } from '../services/api';
 
 interface User {
-  id: number;
+  userId: number;
   username: string;
   role: 'master' | 'viewer';
-  plant?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -22,39 +20,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      authService.getMe()
-        .then((res) => setUser(res.data))
-        .catch(() => localStorage.removeItem('token'))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    // Check SSO authentication on mount
+    authService
+      .getMe()
+      .then((res) => {
+        setUser({
+          userId: res.data.userId,
+          username: res.data.username,
+          role: res.data.role,
+        });
+      })
+      .catch(() => {
+        // Not authenticated - redirect to admin panel
+        window.location.href = '/';
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const login = async (username: string, password: string) => {
-    console.log('[Auth] Attempting login for:', username);
-    try {
-      const res = await authService.login(username, password);
-      console.log('[Auth] Login successful, response:', res.data);
-      localStorage.setItem('token', res.data.token);
-      setUser(res.data.user);
-      console.log('[Auth] Token saved and user set');
-    } catch (error: any) {
-      console.error('[Auth] Login error:', error);
-      console.error('[Auth] Error response:', error.response?.data);
-      throw error;
-    }
-  };
-
   const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
+    // Redirect to admin panel logout
+    window.location.href = '/api/v1/auth/logout';
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

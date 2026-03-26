@@ -10,16 +10,19 @@ if (typeof window !== 'undefined') {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,  // Send cookies with requests (SSO)
 });
 
-// Add token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Handle 401 responses - redirect to admin panel login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 export const authService = {
   login: (username: string, password: string) =>
@@ -36,6 +39,10 @@ export const machineService = {
   getRevisions: (id: number) => api.get(`/machines/${id}/revisions`),
   compare: (ids: number[]) => api.get(`/machines/compare/${ids.join(',')}`),
   finder: (requirements: any) => api.post('/machines/finder/search', requirements),
+  getComments: (id: number) => api.get(`/machines/${id}/comments`),
+  addComment: (id: number, comment: string) => api.post(`/machines/${id}/comments`, { comment }),
+  revertRevision: (machineId: number, revisionId: number) => api.post(`/machines/${machineId}/revisions/${revisionId}/revert`),
+  deleteRevision: (machineId: number, revisionId: number) => api.delete(`/machines/${machineId}/revisions/${revisionId}`),
 };
 
 export const fileService = {

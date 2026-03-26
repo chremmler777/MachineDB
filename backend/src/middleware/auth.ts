@@ -9,7 +9,17 @@ export interface AuthRequest extends Request {
 }
 
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  // If already authenticated by ssoAuth middleware, continue
+  if (req.user) {
+    next();
+    return;
+  }
+
+  // Try to get token from Authorization header or cookies
+  let token = req.headers.authorization?.split(' ')[1];
+  if (!token && req.cookies?.access_token) {
+    token = req.cookies.access_token;
+  }
 
   if (!token) {
     res.status(401).json({ error: 'No token provided' });

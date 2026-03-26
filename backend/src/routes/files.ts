@@ -8,7 +8,7 @@ import { verifyToken, requireMaster, AuthRequest } from '../middleware/auth.js';
 const router = Router();
 
 // Setup multer for file uploads
-const uploadDir = '/data/files';
+const uploadDir = process.env.FILES_DIR || '/tmp/machinedb-files';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -71,6 +71,17 @@ router.post('/machine/:machineId/upload', verifyToken, requireMaster, upload.sin
       [machineId, req.file.originalname, file_type || 'document', req.file.path, req.file.size, req.user?.userId, description]
     );
 
+    // Log WAM uploads as machine revisions
+    if (file_type === 'wam') {
+      const revResult = await pool.query('SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1', [machineId]);
+      const nextRevision = (revResult.rows[0].max_rev || 0) + 1;
+      await pool.query(
+        `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, change_summary)
+         VALUES ($1, $2, $3, 'wam_upload', $4)`,
+        [machineId, nextRevision, req.user?.userId, `WAM uploaded: ${req.file.originalname} (${(req.file.size / 1024).toFixed(0)} KB)`]
+      );
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Upload file error:', error);
@@ -119,6 +130,17 @@ router.delete('/:fileId', verifyToken, requireMaster, async (req: AuthRequest, r
 
     // Delete record from database
     await pool.query('DELETE FROM machine_files WHERE id = $1', [fileId]);
+
+    // Log WAM deletions as machine revisions
+    if (file.file_type === 'wam') {
+      const revResult = await pool.query('SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1', [file.machine_id]);
+      const nextRevision = (revResult.rows[0].max_rev || 0) + 1;
+      await pool.query(
+        `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, change_summary)
+         VALUES ($1, $2, $3, 'wam_delete', $4)`,
+        [file.machine_id, nextRevision, req.user?.userId, `WAM deleted: ${file.file_name}`]
+      );
+    }
 
     res.json({ message: 'File deleted' });
   } catch (error) {

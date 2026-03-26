@@ -134,11 +134,24 @@ const migrations = [
     description TEXT
   )`,
 
+  // Add suspicious_fields column (idempotent)
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS suspicious_fields JSONB DEFAULT '[]'`,
+
+  // Comments table
+  `CREATE TABLE IF NOT EXISTS machine_comments (
+    id SERIAL PRIMARY KEY,
+    machine_id INTEGER NOT NULL REFERENCES machines(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
   // Create indices
   `CREATE INDEX IF NOT EXISTS idx_machines_plant ON machines(plant_location)`,
   `CREATE INDEX IF NOT EXISTS idx_machines_manufacturer ON machines(manufacturer)`,
   `CREATE INDEX IF NOT EXISTS idx_revisions_machine ON machine_revisions(machine_id)`,
   `CREATE INDEX IF NOT EXISTS idx_files_machine ON machine_files(machine_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_comments_machine ON machine_comments(machine_id)`,
 ];
 
 async function runMigrations() {

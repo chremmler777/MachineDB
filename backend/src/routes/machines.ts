@@ -68,53 +68,56 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const { search, manufacturer, plant, clamping_force_min, clamping_force_max, year_min, year_max, limit = 50, offset = 0 } = req.query;
 
-    let query = 'SELECT * FROM machines WHERE 1=1';
+    let query = `SELECT m.*,
+      (SELECT f.id FROM machine_files f WHERE f.machine_id = m.id AND f.file_type = 'wam' ORDER BY f.uploaded_at DESC LIMIT 1) as wam_file_id,
+      (SELECT f.file_name FROM machine_files f WHERE f.machine_id = m.id AND f.file_type = 'wam' ORDER BY f.uploaded_at DESC LIMIT 1) as wam_file_name
+      FROM machines m WHERE 1=1`;
     const params: any[] = [];
     let paramIndex = 1;
 
     if (search) {
-      query += ` AND (internal_name ILIKE $${paramIndex} OR manufacturer ILIKE $${paramIndex} OR model ILIKE $${paramIndex})`;
+      query += ` AND (m.internal_name ILIKE $${paramIndex} OR m.manufacturer ILIKE $${paramIndex} OR m.model ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
 
     if (manufacturer) {
-      query += ` AND manufacturer = $${paramIndex}`;
+      query += ` AND m.manufacturer = $${paramIndex}`;
       params.push(manufacturer);
       paramIndex++;
     }
 
     if (plant) {
-      query += ` AND plant_location = $${paramIndex}`;
+      query += ` AND m.plant_location = $${paramIndex}`;
       params.push(plant);
       paramIndex++;
     }
 
     if (clamping_force_min) {
-      query += ` AND clamping_force_kn >= $${paramIndex}`;
+      query += ` AND m.clamping_force_kn >= $${paramIndex}`;
       params.push(parseFloat(clamping_force_min as string));
       paramIndex++;
     }
 
     if (clamping_force_max) {
-      query += ` AND clamping_force_kn <= $${paramIndex}`;
+      query += ` AND m.clamping_force_kn <= $${paramIndex}`;
       params.push(parseFloat(clamping_force_max as string));
       paramIndex++;
     }
 
     if (year_min) {
-      query += ` AND year_of_construction >= $${paramIndex}`;
+      query += ` AND m.year_of_construction >= $${paramIndex}`;
       params.push(parseInt(year_min as string));
       paramIndex++;
     }
 
     if (year_max) {
-      query += ` AND year_of_construction <= $${paramIndex}`;
+      query += ` AND m.year_of_construction <= $${paramIndex}`;
       params.push(parseInt(year_max as string));
       paramIndex++;
     }
 
-    query += ` ORDER BY internal_name LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    query += ` ORDER BY m.internal_name LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(parseInt(limit as string));
     params.push(parseInt(offset as string));
 
@@ -208,7 +211,10 @@ router.post('/', verifyToken, requireMaster, async (req: AuthRequest, res: Respo
     data = validateAndCoerce(data);
 
     const columns = Object.keys(data).filter((key) => data[key as keyof Machine] !== undefined && data[key as keyof Machine] !== null);
-    const values = columns.map((col) => data[col as keyof Machine]);
+    const values = columns.map((col) => {
+      const v = data[col as keyof Machine];
+      return Array.isArray(v) ? JSON.stringify(v) : v;
+    });
 
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(',');
     const columnNames = columns.join(',');
@@ -222,8 +228,8 @@ router.post('/', verifyToken, requireMaster, async (req: AuthRequest, res: Respo
     // Create initial revision
     await pool.query(
       `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, new_data, change_summary)
-       VALUES ($1, 1, $2, 'create', $3, 'Machine created')`,
-      [machine.id, req.user?.userId, JSON.stringify(machine)]
+       VALUES ($1, 1, $2, 'create', $3, $4)`,
+      [machine.id, req.user?.userId, JSON.stringify(machine), `Created by ${req.user?.username || 'Unknown'}`]
     );
 
     res.status(201).json(machine);
@@ -253,7 +259,7 @@ router.put('/:id', verifyToken, requireMaster, async (req: AuthRequest, res: Res
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined) {
         updates.push(`${key} = $${paramIndex}`);
-        values.push(value);
+        values.push(Array.isArray(value) ? JSON.stringify(value) : value);
         paramIndex++;
       }
     });
@@ -269,6 +275,31 @@ router.put('/:id', verifyToken, requireMaster, async (req: AuthRequest, res: Res
     const result = await pool.query(query, values);
     const machine = result.rows[0];
 
+    // Compute changed fields for summary
+    const prev = previousResult.rows[0];
+    const dataAny = data as any;
+    // Normalize values: parse floats so "1500.00" (from pg) === 1500 (from form)
+    const norm = (v: any): string => {
+      if (v === null || v === undefined || v === '') return '';
+      if (typeof v === 'boolean') return String(v);
+      const n = parseFloat(String(v));
+      if (!isNaN(n) && String(v).trim() !== '') return String(n);
+      return String(v).trim();
+    };
+    const changedKeys = Object.keys(data).filter(k => {
+      if (k === 'suspicious_fields') return false;
+      return norm(prev[k]) !== norm(dataAny[k]);
+    });
+    const changedLines = changedKeys.map(k => {
+      const oldV = prev[k] ?? '—';
+      const newV = dataAny[k] ?? '—';
+      return `${k}: ${oldV} → ${newV}`;
+    });
+    const suspChanged = norm(JSON.stringify(prev.suspicious_fields)) !== norm(JSON.stringify(dataAny.suspicious_fields));
+    if (suspChanged) changedLines.push('Suspicious flags updated');
+    const changedDetails = changedLines.length ? changedLines.join('\n') : 'No changes';
+    const changeSummary = `By ${req.user?.username || 'Unknown'}\n${changedDetails}`;
+
     // Get next revision number
     const revResult = await pool.query('SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1', [id]);
     const nextRevision = (revResult.rows[0].max_rev || 0) + 1;
@@ -276,8 +307,8 @@ router.put('/:id', verifyToken, requireMaster, async (req: AuthRequest, res: Res
     // Create revision
     await pool.query(
       `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, previous_data, new_data, change_summary)
-       VALUES ($1, $2, $3, 'update', $4, $5, 'Machine updated')`,
-      [id, nextRevision, req.user?.userId, JSON.stringify(previousResult.rows[0]), JSON.stringify(machine)]
+       VALUES ($1, $2, $3, 'update', $4, $5, $6)`,
+      [id, nextRevision, req.user?.userId, JSON.stringify(previousResult.rows[0]), JSON.stringify(machine), changeSummary]
     );
 
     res.json(machine);
@@ -322,12 +353,17 @@ router.get('/:id/revisions', verifyToken, async (req: AuthRequest, res: Response
   try {
     const { id } = req.params;
     const result = await pool.query(
-      `SELECT r.*, u.username FROM machine_revisions r
-       LEFT JOIN users u ON r.changed_by = u.id
+      `SELECT r.* FROM machine_revisions r
        WHERE r.machine_id = $1
        ORDER BY r.changed_at DESC`,
       [id]
     );
+
+    // Extract username from change_summary ("By <username>\n...")
+    result.rows.forEach((row: any) => {
+      const match = row.change_summary?.match(/^(?:By|Created by) (.+?)$/m);
+      row.username = match ? match[1] : null;
+    });
 
     res.json(result.rows);
   } catch (error) {
@@ -351,6 +387,114 @@ router.get('/compare/:ids', verifyToken, async (req: AuthRequest, res: Response)
   }
 });
 
+// Delete a revision (logs the deletion as a new audit entry)
+router.delete('/:id/revisions/:revId', verifyToken, requireMaster, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id, revId } = req.params;
+    const revResult = await pool.query('SELECT * FROM machine_revisions WHERE id = $1 AND machine_id = $2', [revId, id]);
+    if (revResult.rows.length === 0) { res.status(404).json({ error: 'Revision not found' }); return; }
+    const rev = revResult.rows[0];
+
+    await pool.query('DELETE FROM machine_revisions WHERE id = $1', [revId]);
+
+    const nextRevResult = await pool.query('SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1', [id]);
+    const nextRevision = (nextRevResult.rows[0].max_rev || 0) + 1;
+    await pool.query(
+      `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, change_summary)
+       VALUES ($1, $2, $3, 'log', $4)`,
+      [id, nextRevision, req.user?.userId, `Revision ${rev.revision_number} (${rev.change_type}) removed from history`]
+    );
+
+    res.json({ message: 'Revision deleted and logged' });
+  } catch (error) {
+    console.error('Delete revision error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Revert machine to a specific revision
+router.post('/:id/revisions/:revId/revert', verifyToken, requireMaster, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id, revId } = req.params;
+
+    const revResult = await pool.query('SELECT * FROM machine_revisions WHERE id = $1 AND machine_id = $2', [revId, id]);
+    if (revResult.rows.length === 0) { res.status(404).json({ error: 'Revision not found' }); return; }
+    const targetRevision = revResult.rows[0];
+    const targetState: any = { ...targetRevision.new_data };
+    ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'].forEach(f => delete targetState[f]);
+
+    const currentResult = await pool.query('SELECT * FROM machines WHERE id = $1', [id]);
+    if (currentResult.rows.length === 0) { res.status(404).json({ error: 'Machine not found' }); return; }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+    Object.entries(targetState).forEach(([key, value]) => {
+      updates.push(`${key} = $${paramIndex}`);
+      values.push(Array.isArray(value) ? JSON.stringify(value) : value);
+      paramIndex++;
+    });
+    updates.push(`updated_by = $${paramIndex}`); values.push(req.user?.userId); paramIndex++;
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(id);
+    const updateQuery = `UPDATE machines SET ${updates.join(',')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await pool.query(updateQuery, values);
+    const machine = result.rows[0];
+
+    const nextRevResult = await pool.query('SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1', [id]);
+    const nextRevision = (nextRevResult.rows[0].max_rev || 0) + 1;
+    await pool.query(
+      `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, previous_data, new_data, change_summary)
+       VALUES ($1, $2, $3, 'revert', $4, $5, $6)`,
+      [id, nextRevision, req.user?.userId, JSON.stringify(currentResult.rows[0]), JSON.stringify(machine), `Reverted to revision ${targetRevision.revision_number}`]
+    );
+
+    res.json(machine);
+  } catch (error) {
+    console.error('Revert error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get comments for a machine
+router.get('/:id/comments', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT c.*, u.username FROM machine_comments c
+       LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.machine_id = $1
+       ORDER BY c.created_at ASC`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get comments error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add comment to a machine
+router.post('/:id/comments', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+    if (!comment?.trim()) {
+      res.status(400).json({ error: 'Comment cannot be empty' });
+      return;
+    }
+    const result = await pool.query(
+      `INSERT INTO machine_comments (machine_id, user_id, comment) VALUES ($1, $2, $3)
+       RETURNING *, (SELECT username FROM users WHERE id = $2) as username`,
+      [id, req.user?.userId, comment.trim()]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Machine Finder - Find machines matching tool requirements
 router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -365,25 +509,27 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
       const gaps: string[] = [];
       let matchScore = 100;
 
-      if (requirements.clamping_force_kn && machine.clamping_force_kn) {
-        const diff = requirements.clamping_force_kn - machine.clamping_force_kn;
+      if (requirements.clamping_force_t && machine.clamping_force_kn) {
+        const diff = requirements.clamping_force_t - machine.clamping_force_kn;
         if (diff > 0) {
-          matchScore -= Math.min(50, diff / 10);
-          gaps.push(`Clamping force: ${diff.toFixed(0)}kN short`);
+          matchScore -= Math.min(50, diff);
+          gaps.push(`gap.clampingForce:${diff.toFixed(0)}`);
         }
       }
 
       if (requirements.mold_width && machine.clearance_horizontal_mm) {
         if (machine.clearance_horizontal_mm < requirements.mold_width) {
+          const diff = (requirements.mold_width - machine.clearance_horizontal_mm).toFixed(0);
           matchScore -= 20;
-          gaps.push(`Mold width: ${(requirements.mold_width - machine.clearance_horizontal_mm).toFixed(0)}mm short`);
+          gaps.push(`gap.moldWidth:${diff}`);
         }
       }
 
       if (requirements.mold_height && machine.mold_height_max_mm) {
         if (machine.mold_height_max_mm < requirements.mold_height) {
+          const diff = (requirements.mold_height - machine.mold_height_max_mm).toFixed(0);
           matchScore -= 20;
-          gaps.push(`Mold height: ${(requirements.mold_height - machine.mold_height_max_mm).toFixed(0)}mm short`);
+          gaps.push(`gap.moldHeight:${diff}`);
         }
       }
 
@@ -391,7 +537,7 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
         const diff = requirements.shot_weight_g - machine.iu1_shot_weight_g;
         if (diff > 0) {
           matchScore -= Math.min(30, diff / 50);
-          gaps.push(`Shot weight: ${diff.toFixed(0)}g short`);
+          gaps.push(`gap.shotWeight:${diff.toFixed(0)}`);
         }
       }
 
@@ -399,7 +545,7 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
         const diff = requirements.core_pulls_nozzle - machine.core_pulls_nozzle;
         if (diff > 0) {
           matchScore -= diff * 10;
-          gaps.push(`Core pulls (nozzle): ${diff} more needed`);
+          gaps.push(`gap.corePulls:${diff}`);
         }
       }
 
@@ -407,7 +553,21 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
         const diff = Math.abs(requirements.centering_ring_nozzle_mm - machine.centering_ring_nozzle_mm);
         if (diff > 5) {
           matchScore -= Math.min(10, diff / 5);
-          gaps.push(`Centering ring (nozzle): ${diff.toFixed(0)}mm mismatch`);
+          gaps.push(`gap.centeringRing:${diff.toFixed(0)}`);
+        }
+      }
+
+      if (requirements.two_shot) {
+        if (!machine.iu2_screw_diameter_mm) {
+          matchScore -= 40;
+          gaps.push('gap.twoShot');
+        }
+      }
+
+      if (requirements.rotary_table) {
+        if (!machine.rotary_table) {
+          matchScore -= 30;
+          gaps.push('gap.rotaryTable');
         }
       }
 
@@ -421,12 +581,21 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
       };
     });
 
-    // Sort by suitability and score
+    // Sort by suitability, then by clamping force proximity (closest sufficient first), then score
     const sorted = scored.sort((a, b) => {
       const suitabilityOrder = { full: 0, near: 1, unsuitable: 2 };
-      if (suitabilityOrder[a.suitability as keyof typeof suitabilityOrder] !== suitabilityOrder[b.suitability as keyof typeof suitabilityOrder]) {
-        return suitabilityOrder[a.suitability as keyof typeof suitabilityOrder] - suitabilityOrder[b.suitability as keyof typeof suitabilityOrder];
+      const aSuit = suitabilityOrder[a.suitability as keyof typeof suitabilityOrder];
+      const bSuit = suitabilityOrder[b.suitability as keyof typeof suitabilityOrder];
+      if (aSuit !== bSuit) return aSuit - bSuit;
+
+      if (requirements.clamping_force_t) {
+        const aForce = a.clamping_force_kn ?? Infinity;
+        const bForce = b.clamping_force_kn ?? Infinity;
+        const aDiff = Math.abs(aForce - requirements.clamping_force_t);
+        const bDiff = Math.abs(bForce - requirements.clamping_force_t);
+        if (Math.abs(aDiff - bDiff) > 1) return aDiff - bDiff;
       }
+
       return b.matchScore - a.matchScore;
     });
 

@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
 import { machineService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface MachineFinderProps {
   onNavigate: (page: string, params?: any) => void;
+  darkMode?: boolean;
 }
 
-export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate }) => {
-  const [requirements, setRequirements] = useState({
-    clamping_force_kn: 0,
-    mold_width: 0,
-    mold_height: 0,
-    shot_weight_g: 0,
-    core_pulls_nozzle: 0,
-    centering_ring_nozzle_mm: 0,
+export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate, darkMode = true }) => {
+  const { t } = useLanguage();
+  const [fields, setFields] = useState({
+    clamping_force_t: '',
+    mold_width: '',
+    mold_height: '',
+    shot_weight_g: '',
+    core_pulls_nozzle: '',
+    centering_ring_nozzle_mm: '',
+    two_shot: false,
+    rotary_table: false,
   });
+  const [plant, setPlant] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -21,7 +27,17 @@ export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate }) => {
   const handleSearch = async () => {
     setLoading(true);
     try {
-      const res = await machineService.finder(requirements);
+      const payload = {
+        clamping_force_t: parseFloat(fields.clamping_force_t) || 0,
+        mold_width: parseFloat(fields.mold_width) || 0,
+        mold_height: parseFloat(fields.mold_height) || 0,
+        shot_weight_g: parseFloat(fields.shot_weight_g) || 0,
+        core_pulls_nozzle: parseFloat(fields.core_pulls_nozzle) || 0,
+        centering_ring_nozzle_mm: parseFloat(fields.centering_ring_nozzle_mm) || 0,
+        two_shot: fields.two_shot,
+        rotary_table: fields.rotary_table,
+      };
+      const res = await machineService.finder(payload);
       setResults(res.data);
       setSearched(true);
     } catch (error) {
@@ -31,153 +47,240 @@ export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate }) => {
     }
   };
 
+  // Translate a gap string like "gap.clampingForce:50" or "gap.twoShot"
+  const translateGap = (gap: string): string => {
+    const [key, value] = gap.split(':');
+    const template = t(key);
+    if (value) return template.replace('{v}', value);
+    return template;
+  };
+
   const getSuitabilityColor = (suitability: string) => {
     switch (suitability) {
-      case 'full':
-        return 'bg-green-100 border-green-500 text-green-900';
-      case 'near':
-        return 'bg-yellow-100 border-yellow-500 text-yellow-900';
-      default:
-        return 'bg-red-100 border-red-500 text-red-900';
+      case 'full': return { bg: '#f0fdf4', border: '#22c55e', text: '#14532d' };
+      case 'near': return { bg: '#fefce8', border: '#eab308', text: '#713f12' };
+      default:     return { bg: '#fef2f2', border: '#ef4444', text: '#7f1d1d' };
     }
   };
 
   const getSuitabilityLabel = (suitability: string) => {
     switch (suitability) {
-      case 'full':
-        return '✓ Full Match';
-      case 'near':
-        return '⚠ Near Match';
-      default:
-        return '✗ Not Suitable';
+      case 'full': return t('finder.fullMatch');
+      case 'near': return t('finder.nearMatch');
+      default:     return t('finder.notSuitable');
     }
   };
 
+  const bg = darkMode ? '#111827' : '#f3f4f6';
+  const cardBg = darkMode ? '#1f2937' : '#ffffff';
+  const borderColor = darkMode ? '#374151' : '#e5e7eb';
+  const textPrimary = darkMode ? '#f9fafb' : '#111827';
+  const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
+  const inputBg = darkMode ? '#111827' : '#ffffff';
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '8px 12px',
+    border: `1px solid ${borderColor}`,
+    borderRadius: '6px',
+    backgroundColor: inputBg,
+    color: textPrimary,
+    fontSize: '14px',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '500',
+    color: textSecondary,
+    marginBottom: '4px',
+  };
+
+  const displayedResults = plant
+    ? results.filter(r => r.plant_location === plant)
+    : results;
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Machine Finder</h2>
+    <div style={{ height: 'calc(100vh - 64px)', backgroundColor: bg, padding: '24px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
+      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: textPrimary, flexShrink: 0 }}>
+        {t('finder.title')}
+      </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6 sticky top-24">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Tool Requirements</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', flex: 1, overflow: 'hidden' }}>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Clamping Force (kN)</label>
-                <input
-                  type="number"
-                  value={requirements.clamping_force_kn}
-                  onChange={(e) => setRequirements({ ...requirements, clamping_force_kn: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
+        {/* Left panel — requirements */}
+        <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '20px', overflowY: 'auto' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: textPrimary }}>
+            {t('finder.toolRequirements')}
+          </h3>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mold Width (mm)</label>
-                <input
-                  type="number"
-                  value={requirements.mold_width}
-                  onChange={(e) => setRequirements({ ...requirements, mold_width: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mold Height (mm)</label>
-                <input
-                  type="number"
-                  value={requirements.mold_height}
-                  onChange={(e) => setRequirements({ ...requirements, mold_height: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Shot Weight (g)</label>
-                <input
-                  type="number"
-                  value={requirements.shot_weight_g}
-                  onChange={(e) => setRequirements({ ...requirements, shot_weight_g: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Core Pulls (Nozzle)</label>
-                <input
-                  type="number"
-                  value={requirements.core_pulls_nozzle}
-                  onChange={(e) => setRequirements({ ...requirements, core_pulls_nozzle: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Centering Ring Nozzle (mm)</label>
-                <input
-                  type="number"
-                  value={requirements.centering_ring_nozzle_mm}
-                  onChange={(e) => setRequirements({ ...requirements, centering_ring_nozzle_mm: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <button
-                onClick={handleSearch}
-                disabled={loading}
-                className="w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium"
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>{t('finder.plant')}</label>
+              <select style={inputStyle} value={plant} onChange={e => setPlant(e.target.value)}>
+                <option value="">{t('machines.allPlants')}</option>
+                <option value="USA">USA</option>
+                <option value="Mexico">Mexico</option>
+              </select>
             </div>
+
+            <div>
+              <label style={labelStyle}>{t('finder.clampingForce')}</label>
+              <input type="number" min="0" style={inputStyle}
+                value={fields.clamping_force_t}
+                onChange={(e) => setFields({ ...fields, clamping_force_t: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>{t('finder.moldWidth')}</label>
+              <input type="number" min="0" style={inputStyle}
+                value={fields.mold_width}
+                onChange={(e) => setFields({ ...fields, mold_width: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>{t('finder.moldHeight')}</label>
+              <input type="number" min="0" style={inputStyle}
+                value={fields.mold_height}
+                onChange={(e) => setFields({ ...fields, mold_height: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>{t('finder.shotWeight')}</label>
+              <input type="number" min="0" style={inputStyle}
+                value={fields.shot_weight_g}
+                onChange={(e) => setFields({ ...fields, shot_weight_g: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>{t('finder.corePulls')}</label>
+              <input type="number" min="0" style={inputStyle}
+                value={fields.core_pulls_nozzle}
+                onChange={(e) => setFields({ ...fields, core_pulls_nozzle: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>{t('finder.centeringRing')}</label>
+              <input type="number" min="0" style={inputStyle}
+                value={fields.centering_ring_nozzle_mm}
+                onChange={(e) => setFields({ ...fields, centering_ring_nozzle_mm: e.target.value })}
+              />
+            </div>
+
+            {/* Checkboxes */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '6px', borderTop: `1px solid ${borderColor}` }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: textPrimary, fontSize: '14px', fontWeight: '500' }}>
+                <input
+                  type="checkbox"
+                  checked={fields.two_shot}
+                  onChange={(e) => setFields({ ...fields, two_shot: e.target.checked })}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                {t('finder.twoShot')}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: textPrimary, fontSize: '14px', fontWeight: '500' }}>
+                <input
+                  type="checkbox"
+                  checked={fields.rotary_table}
+                  onChange={(e) => setFields({ ...fields, rotary_table: e.target.checked })}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                {t('finder.rotaryTable')}
+              </label>
+            </div>
+
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              style={{
+                marginTop: '4px',
+                padding: '10px 16px',
+                backgroundColor: loading ? '#6b7280' : '#3b82f6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                width: '100%',
+              }}
+            >
+              {loading ? t('finder.searching') : t('finder.search')}
+            </button>
           </div>
         </div>
 
-        <div className="lg:col-span-2">
+        {/* Right panel — results (scrollable) */}
+        <div style={{ overflowY: 'auto' }}>
           {!searched ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">
-              <p className="mb-4">Enter tool requirements and click Search to find suitable machines</p>
-              <p className="text-sm">Results will be ranked by suitability: Full Match (Green) → Near Match (Yellow) → Not Suitable (Red)</p>
+            <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '32px', textAlign: 'center' }}>
+              <p style={{ color: textPrimary, marginBottom: '12px', fontSize: '15px' }}>{t('finder.enterRequirements')}</p>
+              <p style={{ color: textSecondary, fontSize: '13px' }}>{t('finder.rankingInfo')}</p>
             </div>
           ) : loading ? (
-            <div className="text-center py-8 text-gray-600">Searching machines...</div>
-          ) : results.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">No machines found matching your criteria</div>
+            <div style={{ textAlign: 'center', padding: '32px', color: textSecondary }}>{t('finder.searchingMachines')}</div>
+          ) : displayedResults.length === 0 ? (
+            <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '32px', textAlign: 'center', color: textSecondary }}>
+              {t('finder.noResults')}
+            </div>
           ) : (
-            <div className="space-y-4">
-              {results.map((machine) => (
-                <div
-                  key={machine.id}
-                  className={`border-l-4 rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition ${getSuitabilityColor(machine.suitability)}`}
-                  onClick={() => onNavigate('machine', machine.id)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-bold text-lg">{machine.internal_name}</p>
-                      <p className="text-sm opacity-75">{machine.manufacturer} {machine.model}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '8px' }}>
+              {displayedResults.map((machine) => {
+                const colors = getSuitabilityColor(machine.suitability);
+                return (
+                  <div
+                    key={machine.id}
+                    onClick={() => onNavigate('machine', machine.id)}
+                    style={{
+                      backgroundColor: colors.bg,
+                      border: `1px solid ${colors.border}`,
+                      borderLeft: `4px solid ${colors.border}`,
+                      borderRadius: '8px',
+                      padding: '16px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '16px', color: colors.text }}>{machine.internal_name}</div>
+                        <div style={{ fontSize: '13px', color: colors.text, opacity: 0.75 }}>{machine.manufacturer} {machine.model}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: '700', fontSize: '15px', color: colors.text }}>{getSuitabilityLabel(machine.suitability)}</div>
+                        <div style={{ fontSize: '12px', color: colors.text, opacity: 0.75 }}>{t('finder.score')}: {machine.matchScore.toFixed(0)}%</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-lg">{getSuitabilityLabel(machine.suitability)}</p>
-                      <p className="text-sm opacity-75">Score: {machine.matchScore.toFixed(0)}%</p>
+
+                    {machine.gaps.length > 0 && (
+                      <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: '10px', marginTop: '8px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: colors.text, opacity: 0.75, marginBottom: '6px' }}>
+                          {t('finder.needsUpgrading')}
+                        </div>
+                        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {machine.gaps.slice(0, 3).map((gap: string, idx: number) => (
+                            <li key={idx} style={{ fontSize: '13px', color: colors.text }}>• {translateGap(gap)}</li>
+                          ))}
+                          {machine.gaps.length > 3 && (
+                            <li style={{ fontSize: '13px', color: colors.text }}>
+                              • {t('finder.moreGaps').replace('{n}', String(machine.gaps.length - 3))}
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '11px', color: colors.text, opacity: 0.5, marginTop: '10px' }}>
+                      {t('finder.plant')}: {machine.plant_location} | {t('finder.year')}: {machine.year_of_construction}
                     </div>
                   </div>
-
-                  {machine.gaps.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-current border-opacity-20">
-                      <p className="text-xs font-semibold opacity-75 mb-2">What needs upgrading:</p>
-                      <ul className="text-sm space-y-1">
-                        {machine.gaps.slice(0, 3).map((gap: string, idx: number) => (
-                          <li key={idx}>• {gap}</li>
-                        ))}
-                        {machine.gaps.length > 3 && <li>• ... and {machine.gaps.length - 3} more</li>}
-                      </ul>
-                    </div>
-                  )}
-
-                  <p className="text-xs opacity-50 mt-3">Plant: {machine.plant_location} | Year: {machine.year_of_construction}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

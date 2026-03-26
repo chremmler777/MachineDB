@@ -94,6 +94,7 @@ export interface Machine {
   // Meta
   special_controls?: string;
   remarks?: string;
+  suspicious_fields?: string[];
   created_at?: Date;
   updated_at?: Date;
   created_by?: number;

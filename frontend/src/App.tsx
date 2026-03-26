@@ -1,7 +1,6 @@
 import React, { useState, ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
-import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MachineListPage } from './pages/MachineListPage';
 import { MachineDetailPage } from './pages/MachineDetailPage';
@@ -47,8 +46,12 @@ const AppContent: React.FC = () => {
   }
 
   if (!user) {
-    return <LoginPage />;
+    // AuthProvider will redirect to /login if not authenticated
+    return null;
   }
+
+  // After login the route state may still be 'login' — default to dashboard
+  const activePage = route.page === 'login' ? 'dashboard' : route.page;
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
@@ -56,33 +59,33 @@ const AppContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('dashboard')}>
             <img src="/logo.png" alt="KTX Logo" className="h-10" />
-            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-              MachineDB
+            <h1 style={{ fontFamily: "'Exo 2', sans-serif", fontWeight: 800, fontSize: '22px', letterSpacing: '0.04em', color: darkMode ? '#f9fafb' : '#1e3a5f', margin: 0 }}>
+              IM-MachineDB
             </h1>
           </div>
           <div className="flex gap-4 items-center">
             <button
               onClick={() => navigate('dashboard')}
-              className={`px-3 py-2 rounded ${route.page === 'dashboard' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              className={`px-3 py-2 rounded ${activePage === 'dashboard' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
               {t('nav.dashboard')}
             </button>
             <button
               onClick={() => navigate('machines')}
-              className={`px-3 py-2 rounded ${route.page === 'machines' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              className={`px-3 py-2 rounded ${activePage === 'machines' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
               {t('nav.machines')}
             </button>
             <button
               onClick={() => navigate('finder')}
-              className={`px-3 py-2 rounded ${route.page === 'finder' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              className={`px-3 py-2 rounded ${activePage === 'finder' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
               {t('nav.finder')}
             </button>
             {user.role === 'master' && (
               <button
                 onClick={() => navigate('admin')}
-                className={`px-3 py-2 rounded ${route.page === 'admin' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                className={`px-3 py-2 rounded ${activePage === 'admin' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               >
                 {t('nav.admin')}
               </button>
@@ -111,11 +114,11 @@ const AppContent: React.FC = () => {
         </div>
       </nav>
 
-      {route.page === 'dashboard' && <DashboardPage darkMode={darkMode} />}
-      {route.page === 'machines' && <MachineListPage onNavigate={navigate} darkMode={darkMode} />}
-      {route.page === 'machine' && <MachineDetailPage machineId={route.params} onNavigate={navigate} darkMode={darkMode} />}
-      {route.page === 'finder' && <MachineFinder onNavigate={navigate} />}
-      {route.page === 'admin' && user.role === 'master' && <AdminPanel />}
+      {activePage === 'dashboard' && <DashboardPage darkMode={darkMode} onNavigate={navigate} />}
+      {activePage === 'machines' && <MachineListPage onNavigate={navigate} darkMode={darkMode} />}
+      {activePage === 'machine' && <MachineDetailPage machineId={route.params} onNavigate={navigate} darkMode={darkMode} />}
+      {activePage === 'finder' && <MachineFinder onNavigate={navigate} darkMode={darkMode} />}
+      {activePage === 'admin' && user.role === 'master' && <AdminPanel darkMode={darkMode} onNavigate={navigate} />}
     </div>
   );
 };

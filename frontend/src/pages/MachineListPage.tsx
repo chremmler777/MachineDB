@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { machineService } from '../services/api';
+import { machineService, fileService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface MachineListPageProps {
   onNavigate: (page: string, params?: any) => void;
@@ -12,126 +13,126 @@ const toNum = (val: any): number => {
   return 0;
 };
 
-// Column groups matching MachineDataBase.xlsx structure with soft pastel colors (fully opaque)
+// Column groups — labels are translation keys, resolved at render time via t()
 const COLUMN_GROUPS = [
   {
-    group: 'Machine Info',
+    group: 'col.group.machineInfo',
     color: 'rgba(173, 216, 230, 1)', // Soft Blue
     columns: [
-      { key: 'internal_name', label: 'Machine' },
-      { key: 'manufacturer', label: 'Manufacturer' },
-      { key: 'order_number', label: 'Order #' },
-      { key: 'model', label: 'Model' },
-      { key: 'serial_number', label: 'Serial #' },
-      { key: 'year_of_construction', label: 'Year' },
+      { key: 'internal_name', label: 'col.machine' },
+      { key: 'manufacturer', label: 'col.manufacturer' },
+      { key: 'order_number', label: 'col.orderNum' },
+      { key: 'model', label: 'col.model' },
+      { key: 'serial_number', label: 'col.serialNum' },
+      { key: 'year_of_construction', label: 'col.year' },
     ]
   },
   {
-    group: 'Machine Dimensions',
+    group: 'col.group.machineDimensions',
     color: 'rgba(175, 238, 238, 1)', // Soft Cyan
     columns: [
-      { key: 'length_mm', label: 'Length (mm)' },
-      { key: 'width_mm', label: 'Width (mm)' },
-      { key: 'height_mm', label: 'Height (mm)' },
-      { key: 'weight_kg', label: 'Weight (kg)' },
+      { key: 'length_mm', label: 'col.length' },
+      { key: 'width_mm', label: 'col.width' },
+      { key: 'height_mm', label: 'col.height' },
+      { key: 'weight_kg', label: 'col.weight' },
     ]
   },
   {
-    group: 'Clamping Unit',
+    group: 'col.group.clampingUnit',
     color: 'rgba(255, 255, 153, 1)', // Soft Yellow
     columns: [
-      { key: 'clamping_force_kn', label: 'Clamping (t)' },
-      { key: 'centering_ring_nozzle_mm', label: 'Center Nozzle (mm)' },
-      { key: 'centering_ring_ejector_mm', label: 'Center Ejector (mm)' },
-      { key: 'fine_centering', label: 'Fine Center' },
-      { key: 'mold_height_min_mm', label: 'Mold H Min (mm)' },
-      { key: 'mold_height_max_mm', label: 'Mold H Max (mm)' },
-      { key: 'opening_stroke_mm', label: 'Opening (mm)' },
-      { key: 'clearance_horizontal_mm', label: 'Clear H (mm)' },
-      { key: 'clearance_vertical_mm', label: 'Clear V (mm)' },
-      { key: 'rotary_table', label: 'Rotary Table' },
-      { key: 'max_weight_ejector_kg', label: 'Max Wt (kg)' },
+      { key: 'clamping_force_kn', label: 'col.clampingForce' },
+      { key: 'centering_ring_nozzle_mm', label: 'col.centerNozzle' },
+      { key: 'centering_ring_ejector_mm', label: 'col.centerEjector' },
+      { key: 'fine_centering', label: 'col.fineCentering' },
+      { key: 'mold_height_min_mm', label: 'col.moldHMin' },
+      { key: 'mold_height_max_mm', label: 'col.moldHMax' },
+      { key: 'opening_stroke_mm', label: 'col.opening' },
+      { key: 'clearance_horizontal_mm', label: 'col.clearH' },
+      { key: 'clearance_vertical_mm', label: 'col.clearV' },
+      { key: 'rotary_table', label: 'col.rotaryTable' },
+      { key: 'max_weight_ejector_kg', label: 'col.maxWeight' },
     ]
   },
   {
-    group: 'Tool Connections',
+    group: 'col.group.toolConnections',
     color: 'rgba(255, 218, 185, 1)', // Soft Orange
     columns: [
-      { key: 'temperature_control_circuits', label: 'Temp Circuits' },
-      { key: 'cascade_count', label: 'Cascade' },
-      { key: 'hot_runner_integrated', label: 'Hot Runner Int' },
-      { key: 'hot_runner_external', label: 'Hot Runner Ext' },
-      { key: 'core_pulls_nozzle', label: 'Core Pulls N' },
-      { key: 'core_pulls_ejector', label: 'Core Pulls E' },
-      { key: 'pneumatic_nozzle', label: 'Pneum Nozzle' },
-      { key: 'pneumatic_ejector', label: 'Pneum Ejector' },
-      { key: 'ejector_stroke_mm', label: 'Ejector Stroke (mm)' },
-      { key: 'ejector_thread', label: 'Ejector Thread' },
-      { key: 'ejector_max_travel_mm', label: 'Ejector Max (mm)' },
+      { key: 'temperature_control_circuits', label: 'col.tempCircuits' },
+      { key: 'cascade_count', label: 'col.cascade' },
+      { key: 'hot_runner_integrated', label: 'col.hotRunnerInt' },
+      { key: 'hot_runner_external', label: 'col.hotRunnerExt' },
+      { key: 'core_pulls_nozzle', label: 'col.corePullsN' },
+      { key: 'core_pulls_ejector', label: 'col.corePullsE' },
+      { key: 'pneumatic_nozzle', label: 'col.pneumNozzle' },
+      { key: 'pneumatic_ejector', label: 'col.pneumEjector' },
+      { key: 'ejector_stroke_mm', label: 'col.ejectorStroke' },
+      { key: 'ejector_thread', label: 'col.ejectorThread' },
+      { key: 'ejector_max_travel_mm', label: 'col.ejectorMax' },
     ]
   },
   {
-    group: 'Interfaces',
+    group: 'col.group.interfaces',
     color: 'rgba(221, 160, 221, 1)', // Soft Purple
     columns: [
-      { key: 'mechanical_interface_tool', label: 'Mech Tool' },
-      { key: 'mechanical_interface_robot', label: 'Mech Robot' },
-      { key: 'electrical_interface_tool', label: 'Elec Tool' },
-      { key: 'electrical_interface_hotrunner', label: 'Elec HotRun' },
-      { key: 'electrical_interface_ejector', label: 'Elec Ejector' },
-      { key: 'electrical_interface_corepull', label: 'Elec CorePull' },
-      { key: 'electrical_interface_robot', label: 'Elec Robot' },
+      { key: 'mechanical_interface_tool', label: 'col.mechTool' },
+      { key: 'mechanical_interface_robot', label: 'col.mechRobot' },
+      { key: 'electrical_interface_tool', label: 'col.elecTool' },
+      { key: 'electrical_interface_hotrunner', label: 'col.elecHotRun' },
+      { key: 'electrical_interface_ejector', label: 'col.elecEjector' },
+      { key: 'electrical_interface_corepull', label: 'col.elecCorePull' },
+      { key: 'electrical_interface_robot', label: 'col.elecRobot' },
     ]
   },
   {
-    group: 'Injection Unit 1',
+    group: 'col.group.injUnit1',
     color: 'rgba(144, 238, 144, 1)', // Soft Green
     columns: [
-      { key: 'iu1_screw_diameter_mm', label: 'Screw (mm)' },
-      { key: 'iu1_shot_volume_cm3', label: 'Shot (cm³)' },
-      { key: 'iu1_injection_flow_cm3s', label: 'Flow (cm³/s)' },
-      { key: 'iu1_plasticizing_rate_gs', label: 'Plast (g/s)' },
-      { key: 'iu1_ld_ratio', label: 'L/D' },
-      { key: 'iu1_injection_pressure_bar', label: 'Press (bar)' },
-      { key: 'iu1_shot_weight_g', label: 'Wt (g)' },
-      { key: 'iu1_screw_type', label: 'Screw Type' },
-      { key: 'iu1_nozzle', label: 'Nozzle' },
+      { key: 'iu1_screw_diameter_mm', label: 'col.screw' },
+      { key: 'iu1_shot_volume_cm3', label: 'col.shot' },
+      { key: 'iu1_injection_flow_cm3s', label: 'col.flow' },
+      { key: 'iu1_plasticizing_rate_gs', label: 'col.plast' },
+      { key: 'iu1_ld_ratio', label: 'col.ld' },
+      { key: 'iu1_injection_pressure_bar', label: 'col.press' },
+      { key: 'iu1_shot_weight_g', label: 'col.wt' },
+      { key: 'iu1_screw_type', label: 'col.screwType' },
+      { key: 'iu1_nozzle', label: 'col.nozzle' },
     ]
   },
   {
-    group: 'Injection Unit 2',
+    group: 'col.group.injUnit2',
     color: 'rgba(255, 130, 130, 1)', // Soft Red
     columns: [
-      { key: 'iu2_screw_diameter_mm', label: 'Screw (mm)' },
-      { key: 'iu2_shot_volume_cm3', label: 'Shot (cm³)' },
-      { key: 'iu2_injection_flow_cm3s', label: 'Flow (cm³/s)' },
-      { key: 'iu2_plasticizing_rate_gs', label: 'Plast (g/s)' },
-      { key: 'iu2_ld_ratio', label: 'L/D' },
-      { key: 'iu2_injection_pressure_bar', label: 'Press (bar)' },
-      { key: 'iu2_shot_weight_g', label: 'Wt (g)' },
-      { key: 'iu2_screw_type', label: 'Screw Type' },
-      { key: 'iu2_nozzle', label: 'Nozzle' },
+      { key: 'iu2_screw_diameter_mm', label: 'col.screw' },
+      { key: 'iu2_shot_volume_cm3', label: 'col.shot' },
+      { key: 'iu2_injection_flow_cm3s', label: 'col.flow' },
+      { key: 'iu2_plasticizing_rate_gs', label: 'col.plast' },
+      { key: 'iu2_ld_ratio', label: 'col.ld' },
+      { key: 'iu2_injection_pressure_bar', label: 'col.press' },
+      { key: 'iu2_shot_weight_g', label: 'col.wt' },
+      { key: 'iu2_screw_type', label: 'col.screwType' },
+      { key: 'iu2_nozzle', label: 'col.nozzle' },
     ]
   },
   {
-    group: 'Robot',
+    group: 'col.group.robot',
     color: 'rgba(255, 192, 203, 1)', // Soft Pink
     columns: [
-      { key: 'robot_manufacturer', label: 'Mfg' },
-      { key: 'robot_model', label: 'Model' },
-      { key: 'robot_serial', label: 'Serial' },
-      { key: 'robot_vacuum_circuits', label: 'Vacuum' },
-      { key: 'robot_air_circuits', label: 'Air' },
-      { key: 'robot_electrical_signals', label: 'Signals' },
+      { key: 'robot_manufacturer', label: 'col.robotMfg' },
+      { key: 'robot_model', label: 'col.robotModel' },
+      { key: 'robot_serial', label: 'col.robotSerial' },
+      { key: 'robot_vacuum_circuits', label: 'col.vacuum' },
+      { key: 'robot_air_circuits', label: 'col.air' },
+      { key: 'robot_electrical_signals', label: 'col.signals' },
     ]
   },
   {
-    group: 'Additional Info',
+    group: 'col.group.additionalInfo',
     color: 'rgba(211, 211, 211, 1)', // Soft Gray
     columns: [
-      { key: 'special_controls', label: 'Special Controls' },
-      { key: 'remarks', label: 'Remarks' },
-      { key: 'plant_location', label: 'Plant' },
+      { key: 'special_controls', label: 'col.specialControls' },
+      { key: 'remarks', label: 'col.remarks' },
+      { key: 'plant_location', label: 'col.plant' },
     ]
   }
 ];
@@ -175,6 +176,7 @@ const formatValue = (value: any, key: string): string => {
 };
 
 export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, darkMode = true }) => {
+  const { t } = useLanguage();
   const [machines, setMachines] = useState<any[]>([]);
   const [allMachines, setAllMachines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,6 +200,22 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [rotaryTable, setRotaryTable] = useState('');
   const [sortKey, setSortKey] = useState<string>('internal_name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleWamDownload = async (fileId: number, fileName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fileService.download(fileId);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (err) {
+      console.error('WAM download failed', err);
+    }
+  };
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -285,29 +303,10 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
       {/* Header + filters */}
       <div style={{ marginBottom: '16px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: uiTextColor }}>
-          Machines ({machines.length})
-        </h2>
-        {/* Row 1: Search + Plant + Manufacturer + Clear */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search machine, manufacturer, model..."
-            style={{ flex: 1, padding: '7px 12px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}
-          />
-          <select value={plant} onChange={(e) => setPlant(e.target.value)}
-            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">All Plants</option>
-            <option value="USA">USA</option>
-            <option value="Mexico">Mexico</option>
-          </select>
-          <select value={manufacturer} onChange={(e) => setManufacturer(e.target.value)}
-            style={{ padding: '7px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">All Manufacturers</option>
-            {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: uiTextColor }}>
+            {t('machines.machinesCount')} ({machines.length})
+          </h2>
           <button
             onClick={() => {
               setSearch(''); setPlant(''); setManufacturer('');
@@ -318,116 +317,191 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
               setVol2Min(''); setVol2Max('');
               setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
             }}
-            style={{ padding: '7px 14px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: '#ef4444', color: '#fff', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            style={{ padding: '6px 14px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: '#ef4444', color: '#fff', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
-            Clear Filters
+            {t('machines.clearFilters')}
           </button>
         </div>
-        {/* Row 2: Clamping, Screw, 2-Shot, Robot, Rotary, MuCell */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7 }}>Clamping (t):</span>
-          <select value={clampingMin} onChange={(e) => setClampingMin(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Min</option>
-            {clampingValues.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
-          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <select value={clampingMax} onChange={(e) => setClampingMax(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Max</option>
-            {clampingValues.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
 
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Screw ø (mm):</span>
-          <select value={screwMin} onChange={(e) => setScrewMin(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Min</option>
-            {screwDiameters.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <select value={screwMax} onChange={(e) => setScrewMax(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Max</option>
-            {screwDiameters.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+        {/* Grouped filter boxes */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch' }}>
 
-          <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px', marginLeft: '8px' }}>
-            <option value="">2-Shot: All</option>
-            <option value="yes">2-Shot: Yes</option>
-            <option value="no">2-Shot: No</option>
-          </select>
+          {/* Machine Info — blue */}
+          <div style={{ flex: 3, backgroundColor: 'rgba(173, 216, 230, 0.15)', border: '1px solid rgba(173, 216, 230, 0.5)', borderRadius: '6px', padding: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#1a6080', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.machineInfo')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('machines.searchPlaceholder')}
+                style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px', width: '100%', boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <select value={plant} onChange={(e) => setPlant(e.target.value)}
+                  style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                  <option value="">{t('machines.allPlants')}</option>
+                  <option value="USA">USA</option>
+                  <option value="Mexico">Mexico</option>
+                </select>
+                <select value={manufacturer} onChange={(e) => setManufacturer(e.target.value)}
+                  style={{ flex: 2, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                  <option value="">{t('machines.allManufacturers')}</option>
+                  {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
+                  style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                  <option value="">{t('filter.twoShotAll')}</option>
+                  <option value="yes">{t('filter.twoShotYes')}</option>
+                  <option value="no">{t('filter.twoShotNo')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-          <select value={hasRobot} onChange={(e) => setHasRobot(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Robot: All</option>
-            <option value="yes">Robot: Yes</option>
-            <option value="no">Robot: No</option>
-          </select>
+          {/* Clamping Unit — yellow */}
+          <div style={{ flex: 1.5, backgroundColor: 'rgba(255, 255, 153, 0.15)', border: '1px solid rgba(255, 220, 50, 0.5)', borderRadius: '6px', padding: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#7a6a00', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.clampingUnit')}</div>
+            <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '3px' }}>{t('filter.force')}</div>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <select value={clampingMin} onChange={(e) => setClampingMin(e.target.value)}
+                style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                <option value="">{t('machines.min')}</option>
+                {clampingValues.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <span style={{ color: uiTextColor, opacity: 0.5, fontSize: '12px' }}>–</span>
+              <select value={clampingMax} onChange={(e) => setClampingMax(e.target.value)}
+                style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                <option value="">{t('machines.max')}</option>
+                {clampingValues.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          </div>
 
-          <select value={rotaryTable} onChange={(e) => setRotaryTable(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Rotary: All</option>
-            <option value="yes">Rotary: Yes</option>
-            <option value="no">Rotary: No</option>
-          </select>
+          {/* Injection Unit 1 — green */}
+          <div style={{ flex: 2, backgroundColor: 'rgba(144, 238, 144, 0.15)', border: '1px solid rgba(100, 200, 100, 0.5)', borderRadius: '6px', padding: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#1a6b1a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.injectionUnit1')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.screwDiam')}</div>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <select value={screwMin} onChange={(e) => setScrewMin(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.min')}</option>
+                    {screwDiameters.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <span style={{ color: uiTextColor, opacity: 0.5, fontSize: '12px' }}>–</span>
+                  <select value={screwMax} onChange={(e) => setScrewMax(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.max')}</option>
+                    {screwDiameters.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.volume')}</div>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <select value={vol1Min} onChange={(e) => setVol1Min(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.min')}</option>
+                    {vol1Values.map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                  <span style={{ color: uiTextColor, opacity: 0.5, fontSize: '12px' }}>–</span>
+                  <select value={vol1Max} onChange={(e) => setVol1Max(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.max')}</option>
+                    {vol1Values.map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <select value={muCell} onChange={(e) => setMuCell(e.target.value)}
-            style={{ padding: '5px 10px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">MuCell: All</option>
-            <option value="yes">MuCell: Yes</option>
-            <option value="no">MuCell: No</option>
-          </select>
-        </div>
-        {/* Row 3: IU2 Screw + Shot Volume sliders */}
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7 }}>IU2 Screw ø (mm):</span>
-          <select value={screw2Min} onChange={(e) => setScrew2Min(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Min</option>
-            {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <select value={screw2Max} onChange={(e) => setScrew2Max(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Max</option>
-            {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+          {/* Injection Unit 2 — red */}
+          <div style={{ flex: 2, backgroundColor: 'rgba(255, 130, 130, 0.15)', border: '1px solid rgba(220, 80, 80, 0.5)', borderRadius: '6px', padding: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#7a1a1a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.injectionUnit2')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.screwDiam')}</div>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <select value={screw2Min} onChange={(e) => setScrew2Min(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.min')}</option>
+                    {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <span style={{ color: uiTextColor, opacity: 0.5, fontSize: '12px' }}>–</span>
+                  <select value={screw2Max} onChange={(e) => setScrew2Max(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.max')}</option>
+                    {screw2Diameters.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.volume')}</div>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <select value={vol2Min} onChange={(e) => setVol2Min(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.min')}</option>
+                    {vol2Values.map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                  <span style={{ color: uiTextColor, opacity: 0.5, fontSize: '12px' }}>–</span>
+                  <select value={vol2Max} onChange={(e) => setVol2Max(e.target.value)}
+                    style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                    <option value="">{t('machines.max')}</option>
+                    {vol2Values.map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Volume Inj. 1 (cm³):</span>
-          <select value={vol1Min} onChange={(e) => setVol1Min(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Min</option>
-            {vol1Values.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
-          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <select value={vol1Max} onChange={(e) => setVol1Max(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Max</option>
-            {vol1Values.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
+          {/* Robot — pink */}
+          <div style={{ flex: 1, backgroundColor: 'rgba(255, 192, 203, 0.15)', border: '1px solid rgba(220, 130, 150, 0.5)', borderRadius: '6px', padding: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#6b1a3d', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.robot')}</div>
+            <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.hasRobot')}</div>
+            <select value={hasRobot} onChange={(e) => setHasRobot(e.target.value)}
+              style={{ width: '100%', padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+              <option value="">{t('machines.all')}</option>
+              <option value="yes">{t('machines.yes')}</option>
+              <option value="no">{t('machines.no')}</option>
+            </select>
+          </div>
 
-          <span style={{ fontSize: '12px', color: uiTextColor, opacity: 0.7, marginLeft: '8px' }}>Volume Inj. 2 (cm³):</span>
-          <select value={vol2Min} onChange={(e) => setVol2Min(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Min</option>
-            {vol2Values.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
-          <span style={{ color: uiTextColor, opacity: 0.5 }}>–</span>
-          <select value={vol2Max} onChange={(e) => setVol2Max(e.target.value)}
-            style={{ padding: '5px 8px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: headerBg, color: uiTextColor, fontSize: '13px' }}>
-            <option value="">Max</option>
-            {vol2Values.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
+          {/* Additional — gray */}
+          <div style={{ flex: 1.5, backgroundColor: 'rgba(211, 211, 211, 0.12)', border: '1px solid rgba(150, 150, 150, 0.4)', borderRadius: '6px', padding: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: darkMode ? '#9ca3af' : '#4b5563', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.additional')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, whiteSpace: 'nowrap' }}>{t('filter.rotary')}</span>
+                <select value={rotaryTable} onChange={(e) => setRotaryTable(e.target.value)}
+                  style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                  <option value="">{t('machines.all')}</option>
+                  <option value="yes">{t('machines.yes')}</option>
+                  <option value="no">{t('machines.no')}</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, whiteSpace: 'nowrap' }}>{t('filter.mucell')}</span>
+                <select value={muCell} onChange={(e) => setMuCell(e.target.value)}
+                  style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                  <option value="">{t('machines.all')}</option>
+                  <option value="yes">{t('machines.yes')}</option>
+                  <option value="no">{t('machines.no')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
       {error && <div style={{ color: 'red', marginBottom: '12px' }}>Error: {error}</div>}
 
       {loading ? (
-        <div style={{ color: uiTextColor, padding: '16px' }}>Loading...</div>
+        <div style={{ color: uiTextColor, padding: '16px' }}>{t('machines.loading')}</div>
       ) : machines.length === 0 ? (
-        <div style={{ color: uiTextColor, padding: '16px' }}>No machines found</div>
+        <div style={{ color: uiTextColor, padding: '16px' }}>{t('machines.noFound')}</div>
       ) : (
         /* Scrollable table container */
         <div style={{
@@ -462,7 +536,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                       color: '#1a1a1a',
                     }}
                   >
-                    {group.group}
+                    {t(group.group)}
                   </th>
                 ))}
               </tr>
@@ -491,7 +565,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                         ...(colIdx === 0 ? { position: 'sticky', left: 0, zIndex: 4 } : {})
                       }}
                     >
-                      {col.label}
+                      {t(col.label)}
                       <span style={{ marginLeft: '4px', opacity: isActive ? 1 : 0.3, fontSize: '9px' }}>
                         {isActive ? (sortDir === 'asc' ? '▲' : '▼') : '▲'}
                       </span>
@@ -501,7 +575,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
               </tr>
             </thead>
             <tbody>
-              {machines.map((m, idx) => (
+              {machines.map((m, idx) => {
+                const suspFields: string[] = Array.isArray(m.suspicious_fields) ? m.suspicious_fields : [];
+                return (
                 <tr
                   key={m.id}
                   style={{ backgroundColor: idx % 2 === 0 ? rowEven : rowOdd, cursor: 'pointer' }}
@@ -509,28 +585,42 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                   onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = idx % 2 === 0 ? rowEven : rowOdd; }}
                   onClick={() => onNavigate('machine', m.id)}
                 >
-                  {COLUMNS.map((col, colIdx) => (
-                    <td
-                      key={col.key}
-                      style={{
-                        padding: '6px 4px',
-                        borderBottom: `1px solid ${borderColor}`,
-                        borderRight: `1px solid ${borderColor}`,
-                        textAlign: col.key.includes('_mm') || col.key.includes('_kg') || col.key.includes('_cm') || col.key.includes('_bar') || col.key.includes('_kn') || col.key.includes('_gs') ? 'right' : 'left',
-                        maxWidth: '150px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        fontSize: '11px',
-                        backgroundColor: colIdx === 0 ? getFirstRowColumnColor(col.key) : getColumnColor(col.key),
-                        color: colIdx === 0 ? '#000000' : '#ffffff',
-                        ...(colIdx === 0 ? { position: 'sticky', left: 0, zIndex: 1 } : {})
-                      }}
-                    >
-                      {formatValue(m[col.key], col.key)}
-                    </td>
-                  ))}
+                  {COLUMNS.map((col, colIdx) => {
+                    const isSusp = suspFields.includes(col.key);
+                    return (
+                      <td
+                        key={col.key}
+                        style={{
+                          padding: '6px 4px',
+                          borderBottom: `1px solid ${borderColor}`,
+                          borderRight: `1px solid ${borderColor}`,
+                          textAlign: col.key.includes('_mm') || col.key.includes('_kg') || col.key.includes('_cm') || col.key.includes('_bar') || col.key.includes('_kn') || col.key.includes('_gs') ? 'right' : 'left',
+                          maxWidth: '150px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          fontSize: '11px',
+                          backgroundColor: isSusp ? 'rgba(251, 146, 60, 0.55)' : colIdx === 0 ? getFirstRowColumnColor(col.key) : getColumnColor(col.key),
+                          color: isSusp ? '#431407' : colIdx === 0 ? '#000000' : darkMode ? '#ffffff' : '#111827',
+                          ...(colIdx === 0 ? { position: 'sticky', left: 0, zIndex: 1 } : {})
+                        }}
+                        title={isSusp ? '⚑ Suspicious / needs validation' : undefined}
+                      >
+                        {isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}
+                        {col.key === 'internal_name' && m.wam_file_id && (
+                          <button
+                            onClick={e => handleWamDownload(m.wam_file_id, m.wam_file_name, e)}
+                            title={`Download WAM: ${m.wam_file_name}`}
+                            style={{ marginLeft: '6px', padding: '1px 5px', fontSize: '9px', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '3px', backgroundColor: 'transparent', cursor: 'pointer', fontWeight: '700', verticalAlign: 'middle' }}
+                          >
+                            {t('machines.downloadWam')}
+                          </button>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
