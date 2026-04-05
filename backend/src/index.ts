@@ -6,7 +6,9 @@ import authRoutes from './routes/auth.js';
 import machinesRoutes from './routes/machines.js';
 import filesRoutes from './routes/files.js';
 import importRoutes from './routes/import.js';
+import v1MachinesRoutes from './routes/v1-machines.js';
 import { ssoAuth } from './middleware/sso-auth.js';
+import { serviceAuth } from './middleware/service-auth.js';
 
 dotenv.config();
 
@@ -33,6 +35,9 @@ app.get('/api/auth/me', ssoAuth, (req: any, res) => {
     role: req.user.role,
   });
 });
+
+// External service API (service-to-service bearer auth, for RFQ2/PLM2/etc)
+app.use('/v1', serviceAuth, v1MachinesRoutes);
 
 // Protected routes - require SSO authentication
 app.use('/api/machines', ssoAuth, machinesRoutes);
