@@ -2,6 +2,12 @@
 
 <!-- Format: ## [YYYY-MM-DD HH:MM] Title / Decision / Why / Phase / Impact -->
 
+## [2026-04-04 21:15] Delete bug fix + FK change to preserve deletion audit
+**Decision**: (1) Wrap DELETE /machines/:id in a transaction, INSERT deletion revision BEFORE the DELETE (previously was DELETE then INSERT — FK violation every time, 500 + phantom delete). (2) Change `machine_revisions.machine_id` FK from `ON DELETE CASCADE` to `ON DELETE SET NULL`, drop NOT NULL. Deletion revisions now survive parent removal with machine_id=NULL.
+**Why**: User hit "server error" on delete but row was gone. Root cause: handler ran DELETE (auto-commit) then INSERT into machine_revisions referencing the just-deleted id → 23503. Fixing order alone would still lose audit trail via CASCADE. SET NULL preserves the historical record (`previous_data`, `change_summary`) for compliance.
+**Phase**: 1
+**Impact**: `backend/src/routes/machines.ts:321-362`, migration added in `backend/src/db/migrate.ts`, regression tests in `backend/src/__tests__/delete-machine.test.ts` (run against isolated `machinedb_test` DB). Revision history UI must handle machine_id=NULL rows if it queries across them. Commit 011add5.
+
 ## [2026-04-04 16:50] Visual overhaul of frontend
 **Decision**: Added colored left-accent stat cards on dashboard, gradient buttons, colored section headers on detail page matching table column groups, Inter font, custom dark scrollbars. Kept dark mode as default.
 **Why**: User asked for "more visually pleasing". Color system already existed for table column groups (blue=machine info, yellow=clamping, green=IU1, etc.) — extended that visual language to other pages for coherence.
