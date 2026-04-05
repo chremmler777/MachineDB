@@ -1,5 +1,8 @@
 # Hard Constraints
 
+## ⚠️ #1 rule: Never lose user-submitted data
+User-entered/imported DB rows, uploaded files — these are hard work and outrank all operational concerns. Before ANY destructive Docker/DB operation (`down -v`, `volume rm`, `prune`, `DROP`, `TRUNCATE`, wholesale `DELETE`), stop and confirm with the user. If you see an orphaned volume, keep it. If the DB looks empty, assume the data is elsewhere and hunt before acting. Lost data on 2026-04-04 — recovered from orphan volume `machinedb_postgres_data`. Don't repeat that scare.
+
 ## Architecture
 - **Master docker-compose** is `/home/nitrolinux/claude/docker-compose.yml`, NOT `./machinedb/docker-compose.yml`. All deploys go through the master. Running compose from inside `/machinedb/` creates a separate project with a separate DB volume (`machinedb_postgres_data` vs `claude_machinedb_postgres_data`) — causes data-loss scares. Always `cd /home/nitrolinux/claude` before compose commands.
 - Backend code changes require `docker compose build machinedb-backend --no-cache && docker compose up -d machinedb-backend`. Local `npm run dev` on the host does NOT affect the running Docker container.
