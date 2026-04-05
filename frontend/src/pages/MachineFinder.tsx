@@ -80,21 +80,25 @@ export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate, darkMo
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '8px 12px',
+    padding: '9px 12px',
     border: `1px solid ${borderColor}`,
-    borderRadius: '6px',
+    borderRadius: '8px',
     backgroundColor: inputBg,
     color: textPrimary,
-    fontSize: '14px',
+    fontSize: '13px',
     boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+    outline: 'none',
   };
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    fontSize: '13px',
-    fontWeight: '500',
+    fontSize: '12px',
+    fontWeight: '600',
     color: textSecondary,
-    marginBottom: '4px',
+    marginBottom: '5px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
   };
 
   const displayedResults = plant
@@ -103,15 +107,22 @@ export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate, darkMo
 
   return (
     <div style={{ height: 'calc(100vh - 64px)', backgroundColor: bg, padding: '24px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: textPrimary, flexShrink: 0 }}>
+      <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '16px', color: textPrimary, flexShrink: 0, letterSpacing: '-0.01em' }}>
         {t('finder.title')}
       </h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', flex: 1, overflow: 'hidden' }}>
 
         {/* Left panel — requirements */}
-        <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '20px', overflowY: 'auto' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: textPrimary }}>
+        <div style={{
+          backgroundColor: cardBg,
+          border: `1px solid ${borderColor}`,
+          borderRadius: '12px',
+          padding: '20px',
+          overflowY: 'auto',
+          background: darkMode ? 'linear-gradient(180deg, rgba(30,41,59,0.6), rgba(17,24,39,0.8))' : '#ffffff',
+        }}>
+          <h3 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: textPrimary, letterSpacing: '0.01em' }}>
             {t('finder.toolRequirements')}
           </h3>
 
@@ -199,16 +210,18 @@ export const MachineFinder: React.FC<MachineFinderProps> = ({ onNavigate, darkMo
               onClick={handleSearch}
               disabled={loading}
               style={{
-                marginTop: '4px',
-                padding: '10px 16px',
-                backgroundColor: loading ? '#6b7280' : '#3b82f6',
+                marginTop: '8px',
+                padding: '11px 16px',
+                background: loading ? '#6b7280' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 width: '100%',
+                transition: 'all 0.2s',
+                boxShadow: loading ? 'none' : '0 2px 8px rgba(59,130,246,0.3)',
               }}
             >
               {loading ? t('finder.searching') : t('finder.search')}

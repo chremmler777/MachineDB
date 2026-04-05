@@ -317,7 +317,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
               setVol2Min(''); setVol2Max('');
               setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
             }}
-            style={{ padding: '6px 14px', border: `1px solid ${borderColor}`, borderRadius: '6px', backgroundColor: '#ef4444', color: '#fff', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            style={{ padding: '7px 16px', border: 'none', borderRadius: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: '600', boxShadow: '0 1px 4px rgba(239,68,68,0.3)', transition: 'all 0.15s' }}
           >
             {t('machines.clearFilters')}
           </button>
@@ -507,10 +507,11 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
         <div style={{
           flex: 1,
           overflow: 'auto',
-          border: `1px solid ${borderColor}`,
-          borderRadius: '8px',
+          border: `1px solid ${darkMode ? 'rgba(75,85,99,0.5)' : borderColor}`,
+          borderRadius: '10px',
           backgroundColor: bg,
           marginBottom: '8px',
+          boxShadow: darkMode ? '0 2px 12px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
         }}>
           <table style={{
             borderCollapse: 'collapse',

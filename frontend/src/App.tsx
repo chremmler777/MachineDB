@@ -55,10 +55,10 @@ const AppContent: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
-      <nav className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <nav className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow`} style={{ borderBottom: darkMode ? '1px solid rgba(59, 130, 246, 0.15)' : undefined }}>
+        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('dashboard')}>
-            <img src="/logo.png" alt="KTX Logo" className="h-10" />
+            <img src={darkMode ? `${import.meta.env.BASE_URL}logo-white.png` : `${import.meta.env.BASE_URL}logo.png`} alt="KTX Logo" className="h-10" />
             <h1 style={{ fontFamily: "'Exo 2', sans-serif", fontWeight: 800, fontSize: '22px', letterSpacing: '0.04em', color: darkMode ? '#f9fafb' : '#1e3a5f', margin: 0 }}>
               IM-MachineDB
             </h1>

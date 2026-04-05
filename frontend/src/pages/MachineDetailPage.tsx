@@ -86,6 +86,17 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
 
   const suspFields: string[] = Array.isArray(machine.suspicious_fields) ? machine.suspicious_fields : [];
 
+  const sectionColors: Record<string, string> = {
+    'Dimensions': '#93c5fd',
+    'Clamping Unit': '#fde68a',
+    'Tool Connections': '#fdba74',
+    'Interfaces': '#d8b4fe',
+    'Injection Unit 1': '#86efac',
+    'Injection Unit 2': '#fca5a5',
+    'Robot': '#fbcfe8',
+    'Additional Info': '#d1d5db',
+  };
+
   const sections = [
     {
       title: 'Dimensions',
@@ -189,15 +200,18 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
     },
   ];
 
-  const tabStyle = (active: boolean) => ({
-    padding: '8px 20px',
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: '10px 24px',
     cursor: 'pointer',
-    background: 'none',
+    background: active ? (darkMode ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.05)') : 'none',
     border: 'none',
     borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
+    borderRadius: '6px 6px 0 0',
     color: active ? '#3b82f6' : textSecondary,
     fontWeight: active ? '600' : '400',
-    fontSize: '14px',
+    fontSize: '13px',
+    transition: 'all 0.15s',
+    letterSpacing: '0.01em',
   });
 
   return (
@@ -205,12 +219,12 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
     <div style={{ padding: '24px', color: textPrimary }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: textPrimary }}>{machine.internal_name}</h2>
+        <h2 style={{ fontSize: '26px', fontWeight: '700', color: textPrimary, letterSpacing: '-0.01em' }}>{machine.internal_name}</h2>
         <button
           onClick={() => onNavigate('machines')}
-          style={{ padding: '8px 16px', backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', color: textPrimary, cursor: 'pointer' }}
+          style={{ padding: '8px 18px', backgroundColor: darkMode ? 'rgba(55,65,81,0.5)' : cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', color: textPrimary, cursor: 'pointer', fontSize: '13px', fontWeight: '500', transition: 'all 0.15s' }}
         >
-          ← Back
+          Back
         </button>
       </div>
 
@@ -225,7 +239,17 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
       )}
 
       {/* Summary card */}
-      <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div style={{
+        backgroundColor: cardBg,
+        border: `1px solid ${borderColor}`,
+        borderRadius: '12px',
+        padding: '20px 24px',
+        marginBottom: '24px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '20px',
+        background: darkMode ? 'linear-gradient(135deg, rgba(30,41,59,0.8), rgba(30,41,59,0.4))' : '#ffffff',
+      }}>
         {[
           { label: 'Manufacturer', value: machine.manufacturer },
           { label: 'Model', value: machine.model },
@@ -237,8 +261,8 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
           { label: 'Clamping Force', value: machine.clamping_force_kn ? `${machine.clamping_force_kn} t` : '-' },
         ].map(({ label, value }) => (
           <div key={label}>
-            <div style={{ fontSize: '11px', color: textSecondary, marginBottom: '2px' }}>{label}</div>
-            <div style={{ fontWeight: '600', color: textPrimary }}>{value || '-'}</div>
+            <div style={{ fontSize: '10px', color: textSecondary, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '500' }}>{label}</div>
+            <div style={{ fontWeight: '600', color: textPrimary, fontSize: '14px' }}>{value || '-'}</div>
           </div>
         ))}
       </div>
@@ -256,24 +280,40 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
           {sections.map(({ title, rows }) => {
             const filled = rows.filter(Boolean) as { label: string; key: string; display: string }[];
             if (filled.length === 0) return null;
+            const accentColor = sectionColors[title] || '#9ca3af';
             return (
-              <div key={title} style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '16px' }}>
-                <h3 style={{ fontWeight: '700', fontSize: '14px', marginBottom: '12px', color: textPrimary, borderBottom: `1px solid ${borderColor}`, paddingBottom: '8px' }}>{title}</h3>
-                <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-                  <tbody>
-                    {filled.map(({ label, key, display }) => {
-                      const isSusp = suspFields.includes(key);
-                      return (
-                      <tr key={label} style={{ borderBottom: `1px solid ${borderColor}`, backgroundColor: isSusp ? 'rgba(251, 146, 60, 0.12)' : 'transparent' }}>
-                        <td style={{ padding: '6px 4px', color: isSusp ? '#c2410c' : textSecondary, width: '55%', fontWeight: isSusp ? '600' : '400' }}>
-                          {isSusp && <span style={{ marginRight: '4px' }}>⚑</span>}{label}
-                        </td>
-                        <td style={{ padding: '6px 4px', color: isSusp ? '#c2410c' : textPrimary, fontWeight: '500', textAlign: 'right' }}>{display}</td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div key={title} style={{
+                backgroundColor: cardBg,
+                border: `1px solid ${borderColor}`,
+                borderRadius: '10px',
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  padding: '10px 16px',
+                  background: darkMode
+                    ? `linear-gradient(135deg, ${accentColor}22, ${accentColor}08)`
+                    : `linear-gradient(135deg, ${accentColor}40, ${accentColor}15)`,
+                  borderBottom: `2px solid ${accentColor}${darkMode ? '30' : '50'}`,
+                }}>
+                  <h3 style={{ fontWeight: '700', fontSize: '13px', color: darkMode ? accentColor : '#1a1a1a', letterSpacing: '0.01em' }}>{title}</h3>
+                </div>
+                <div style={{ padding: '8px 16px 12px' }}>
+                  <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      {filled.map(({ label, key, display }) => {
+                        const isSusp = suspFields.includes(key);
+                        return (
+                        <tr key={label} style={{ borderBottom: `1px solid ${darkMode ? 'rgba(55,65,81,0.5)' : borderColor}`, backgroundColor: isSusp ? 'rgba(251, 146, 60, 0.12)' : 'transparent' }}>
+                          <td style={{ padding: '7px 4px', color: isSusp ? '#c2410c' : textSecondary, width: '55%', fontWeight: isSusp ? '600' : '400', fontSize: '12px' }}>
+                            {isSusp && <span style={{ marginRight: '4px' }}>⚑</span>}{label}
+                          </td>
+                          <td style={{ padding: '7px 4px', color: isSusp ? '#c2410c' : textPrimary, fontWeight: '500', textAlign: 'right', fontSize: '13px' }}>{display}</td>
+                        </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })}
