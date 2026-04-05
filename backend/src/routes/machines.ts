@@ -329,17 +329,36 @@ router.delete('/:id', verifyToken, requireMaster, async (req: AuthRequest, res: 
       return;
     }
 
-    await pool.query('DELETE FROM machines WHERE id = $1', [id]);
+    // Write the deletion revision BEFORE the DELETE, in a single transaction.
+    // Previously this ran DELETE first then INSERT — which violated the FK
+    // (machine_revisions.machine_id REFERENCES machines(id)) because the parent
+    // row was already gone. That caused a 500 response while the DELETE had
+    // already auto-committed, leaving the DB in an inconsistent state.
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    // Create deletion revision
-    const revResult = await pool.query('SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1', [id]);
-    const nextRevision = (revResult.rows[0].max_rev || 0) + 1;
+      const revResult = await client.query(
+        'SELECT MAX(revision_number) as max_rev FROM machine_revisions WHERE machine_id = $1',
+        [id]
+      );
+      const nextRevision = (revResult.rows[0].max_rev || 0) + 1;
 
-    await pool.query(
-      `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, previous_data, change_summary)
-       VALUES ($1, $2, $3, 'delete', $4, 'Machine deleted')`,
-      [id, nextRevision, req.user?.userId, JSON.stringify(previousResult.rows[0])]
-    );
+      await client.query(
+        `INSERT INTO machine_revisions (machine_id, revision_number, changed_by, change_type, previous_data, change_summary)
+         VALUES ($1, $2, $3, 'delete', $4, 'Machine deleted')`,
+        [id, nextRevision, req.user?.userId, JSON.stringify(previousResult.rows[0])]
+      );
+
+      await client.query('DELETE FROM machines WHERE id = $1', [id]);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
 
     res.json({ message: 'Machine deleted' });
   } catch (error) {

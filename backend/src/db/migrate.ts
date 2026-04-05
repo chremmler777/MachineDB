@@ -146,6 +146,14 @@ const migrations = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Preserve deletion revisions: drop ON DELETE CASCADE on machine_revisions.machine_id,
+  // allow machine_id to go NULL when the parent machine is deleted. This keeps the
+  // audit trail (previous_data, change_summary) after a machine is removed.
+  `ALTER TABLE machine_revisions ALTER COLUMN machine_id DROP NOT NULL`,
+  `ALTER TABLE machine_revisions DROP CONSTRAINT IF EXISTS machine_revisions_machine_id_fkey`,
+  `ALTER TABLE machine_revisions ADD CONSTRAINT machine_revisions_machine_id_fkey
+     FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE SET NULL`,
+
   // Create indices
   `CREATE INDEX IF NOT EXISTS idx_machines_plant ON machines(plant_location)`,
   `CREATE INDEX IF NOT EXISTS idx_machines_manufacturer ON machines(manufacturer)`,
