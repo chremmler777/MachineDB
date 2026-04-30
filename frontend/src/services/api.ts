@@ -57,6 +57,7 @@ export const fileService = {
     });
   },
   download: (fileId: number) => api.get(`/files/download/${fileId}`, { responseType: 'blob' }),
+  view: (fileId: number) => api.get(`/files/view/${fileId}`, { responseType: 'blob' }),
   delete: (fileId: number) => api.delete(`/files/${fileId}`),
 };
 

@@ -137,6 +137,16 @@ const migrations = [
   // Add suspicious_fields column (idempotent)
   `ALTER TABLE machines ADD COLUMN IF NOT EXISTS suspicious_fields JSONB DEFAULT '[]'`,
 
+  // Platen sketch fields (for 2D overlay vs RFQ tool footprint)
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS platen_horizontal_mm DECIMAL(10,2)`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS platen_vertical_mm DECIMAL(10,2)`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS min_mold_horizontal_mm DECIMAL(10,2)`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS min_mold_vertical_mm DECIMAL(10,2)`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS bolt_pattern_json JSONB`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS tiebar_diameter_mm DECIMAL(10,2)`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS ejector_hole_diameter_mm DECIMAL(10,2)`,
+  `ALTER TABLE machines ADD COLUMN IF NOT EXISTS knockout_pattern_json JSONB`,
+
   // Comments table
   `CREATE TABLE IF NOT EXISTS machine_comments (
     id SERIAL PRIMARY KEY,

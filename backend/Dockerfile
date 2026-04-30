@@ -1,5 +1,7 @@
 FROM node:20-alpine
 
+RUN apk add --no-cache imagemagick imagemagick-tiff tiff
+
 WORKDIR /app
 
 COPY package*.json ./

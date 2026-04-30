@@ -217,6 +217,29 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     }
   };
 
+  const [viewer, setViewer] = useState<{ fileId: number; fileName: string; blobUrl: string; mime: string } | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
+
+  const handleWamView = async (fileId: number, fileName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setViewerLoading(true);
+    try {
+      const res = await fileService.view(fileId);
+      const mime = res.headers['content-type'] || 'application/octet-stream';
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: mime }));
+      setViewer({ fileId, fileName, blobUrl, mime });
+    } catch (err) {
+      console.error('WAM view failed', err);
+    } finally {
+      setViewerLoading(false);
+    }
+  };
+
+  const closeViewer = () => {
+    if (viewer) window.URL.revokeObjectURL(viewer.blobUrl);
+    setViewer(null);
+  };
+
   const handleSort = (key: string) => {
     if (sortKey === key) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -606,15 +629,23 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                         }}
                         title={isSusp ? '⚑ Suspicious / needs validation' : undefined}
                       >
-                        {isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}
-                        {col.key === 'internal_name' && m.wam_file_id && (
-                          <button
-                            onClick={e => handleWamDownload(m.wam_file_id, m.wam_file_name, e)}
-                            title={`Download WAM: ${m.wam_file_name}`}
-                            style={{ marginLeft: '6px', padding: '1px 5px', fontSize: '9px', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '3px', backgroundColor: 'transparent', cursor: 'pointer', fontWeight: '700', verticalAlign: 'middle' }}
-                          >
-                            {t('machines.downloadWam')}
-                          </button>
+                        {col.key === 'internal_name' ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                            <span style={{ flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}
+                            </span>
+                            {m.wam_file_id && (
+                              <button
+                                onClick={e => handleWamView(m.wam_file_id, m.wam_file_name, e)}
+                                title={`View WAM: ${m.wam_file_name}`}
+                                style={{ flex: '0 0 auto', marginLeft: 'auto', padding: '1px 5px', fontSize: '9px', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '3px', backgroundColor: 'transparent', cursor: 'pointer', fontWeight: '700' }}
+                              >
+                                {t('machines.downloadWam')}
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <>{isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}</>
                         )}
                       </td>
                     );
@@ -624,6 +655,31 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {viewerLoading && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, color: '#fff', fontSize: '14px' }}>
+          Loading WAM…
+        </div>
+      )}
+      {viewer && (
+        <div onClick={closeViewer} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: darkMode ? '#1f2937' : '#fff', width: '92vw', height: '92vh', display: 'flex', flexDirection: 'column', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: `1px solid ${borderColor}`, color: darkMode ? '#fff' : '#111' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600 }}>{viewer.fileName}</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a href={viewer.blobUrl} download={viewer.fileName} style={{ fontSize: '12px', padding: '3px 10px', border: '1px solid #3b82f6', color: '#3b82f6', borderRadius: '3px', textDecoration: 'none' }}>Download original</a>
+                <button onClick={closeViewer} style={{ fontSize: '12px', padding: '3px 10px', border: '1px solid #888', background: 'transparent', color: darkMode ? '#fff' : '#111', borderRadius: '3px', cursor: 'pointer' }}>Close</button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {viewer.mime === 'application/pdf' ? (
+                <iframe src={viewer.blobUrl} style={{ width: '100%', height: '100%', border: 0, background: '#fff' }} title={viewer.fileName} />
+              ) : (
+                <img src={viewer.blobUrl} alt={viewer.fileName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', background: '#fff' }} />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

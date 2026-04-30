@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { machineService, fileService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import MachineSketch from '../components/MachineSketch';
 
 interface MachineDetailPageProps {
   machineId: number;
@@ -18,7 +19,7 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
   const [machine, setMachine] = useState<any>(null);
   const [files, setFiles] = useState<any[]>([]);
   const [revisions, setRevisions] = useState<any[]>([]);
-  const [tab, setTab] = useState<'specs' | 'files' | 'revisions'>('specs');
+  const [tab, setTab] = useState<'specs' | 'sketch' | 'files' | 'revisions'>('specs');
   const [loading, setLoading] = useState(true);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const { user } = useAuth();
@@ -270,6 +271,7 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: `1px solid ${borderColor}`, marginBottom: '24px' }}>
         <button style={tabStyle(tab === 'specs')} onClick={() => setTab('specs')}>Specifications</button>
+        <button style={tabStyle(tab === 'sketch')} onClick={() => setTab('sketch')}>Sketch</button>
         <button style={tabStyle(tab === 'files')} onClick={() => setTab('files')}>Files ({files.length})</button>
         <button style={tabStyle(tab === 'revisions')} onClick={() => setTab('revisions')}>History ({revisions.length})</button>
       </div>
@@ -317,6 +319,13 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Sketch tab */}
+      {tab === 'sketch' && (
+        <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '20px' }}>
+          <MachineSketch machine={machine} darkMode={darkMode} />
         </div>
       )}
 

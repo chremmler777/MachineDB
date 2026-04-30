@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 import pool from '../db/connection.js';
 import { verifyToken, requireMaster, AuthRequest } from '../middleware/auth.js';
 
@@ -106,6 +107,49 @@ router.get('/download/:fileId', verifyToken, async (req: AuthRequest, res: Respo
   } catch (error) {
     console.error('Download file error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Inline view: streams PDF as-is, converts TIFF -> PNG on the fly
+router.get('/view/:fileId', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { fileId } = req.params;
+    const result = await pool.query('SELECT * FROM machine_files WHERE id = $1', [fileId]);
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'File not found' });
+      return;
+    }
+    const file = result.rows[0];
+    if (!fs.existsSync(file.file_path)) {
+      res.status(404).json({ error: 'File missing on disk' });
+      return;
+    }
+    const ext = path.extname(file.file_name).toLowerCase();
+    if (ext === '.pdf') {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${file.file_name}"`);
+      fs.createReadStream(file.file_path).pipe(res);
+      return;
+    }
+    if (ext === '.tif' || ext === '.tiff') {
+      res.setHeader('Content-Type', 'image/png');
+      const proc = spawn('magick', [file.file_path, '-resize', '2000x2000>', '-quality', '90', 'png:-']);
+      proc.stdout.pipe(res);
+      proc.stderr.on('data', d => console.error('magick:', d.toString()));
+      proc.on('error', err => {
+        console.error('magick spawn error', err);
+        if (!res.headersSent) res.status(500).json({ error: 'Conversion failed' });
+      });
+      proc.on('close', code => {
+        if (code !== 0 && !res.headersSent) res.status(500).json({ error: `Conversion exited ${code}` });
+      });
+      return;
+    }
+    res.setHeader('Content-Disposition', `inline; filename="${file.file_name}"`);
+    fs.createReadStream(file.file_path).pipe(res);
+  } catch (error) {
+    console.error('View file error:', error);
+    if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
   }
 });
 
