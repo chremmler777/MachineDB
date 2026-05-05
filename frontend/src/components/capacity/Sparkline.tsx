@@ -50,7 +50,11 @@ export function Sparkline({ cells }: { cells: CapacityCell[] }) {
             fill={COLOR_FILL[c.status]}
             stroke={COLOR_STROKE[c.status]}
             rx={2}
-          />
+          >
+            <title>
+              {`'${String(c.year).slice(2)}  ${c.utilization_pct.toFixed(0)}% util  ·  demand ${c.demand.toFixed(2)} / ${c.available} mach  ·  ${c.free >= 0 ? '+' : ''}${c.free.toFixed(2)} free`}
+            </title>
+          </rect>
         );
       })}
     </svg>

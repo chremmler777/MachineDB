@@ -5,19 +5,33 @@ export function ToolInfoCard({
   machEquiv,
   year,
   piecesPerYear,
+  align = 'center',
 }: {
   tool: Tool;
   machEquiv: number;
   year: number;
   piecesPerYear: number | undefined;
+  align?: 'left' | 'center' | 'right';
 }) {
+  // Anchor card so it never overflows the chart container.
+  // left = card's left edge sits on segment's left edge; right = mirror; center = standard.
+  const cardPos = align === 'left'
+    ? { left: 0, transform: 'none' as const }
+    : align === 'right'
+    ? { right: 0, left: 'auto' as const, transform: 'none' as const }
+    : { left: '50%', transform: 'translateX(-50%)' };
+  const arrowPos = align === 'left'
+    ? { left: 16, transform: 'rotate(45deg)' as const }
+    : align === 'right'
+    ? { right: 16, left: 'auto' as const, transform: 'rotate(45deg)' as const }
+    : { left: '50%', transform: 'translateX(-50%) rotate(45deg)' };
+
   return (
     <div
       style={{
         position: 'absolute',
         bottom: 'calc(100% + 12px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        ...cardPos,
         background: '#ffffff',
         border: '1px solid #ececea',
         borderRadius: 14,
@@ -31,10 +45,8 @@ export function ToolInfoCard({
     >
       {/* Arrow indicator */}
       <span style={{
-        content: '',
         position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%) rotate(45deg)',
+        ...arrowPos,
         bottom: -6,
         width: 10, height: 10,
         background: '#ffffff',
@@ -66,8 +78,8 @@ export function ToolInfoCard({
         borderTop: '1px solid #ececea',
         display: 'flex', flexDirection: 'column', gap: 5,
       }}>
-        <InfoRow label="Cavities" value={String(tool.cavities)} />
-        <InfoRow label="Cycle time" value={`${tool.rated_cycle_time_sec.toFixed(0)} s`} />
+        <InfoRow label="Cavities" value={String(tool.cavities ?? '—')} />
+        <InfoRow label="Cycle time" value={tool.rated_cycle_time_sec != null ? `${Number(tool.rated_cycle_time_sec).toFixed(0)} s` : '—'} />
         <InfoRow
           label={`Pieces '${String(year).slice(2)}`}
           value={piecesPerYear != null ? piecesPerYear.toLocaleString() : '—'}

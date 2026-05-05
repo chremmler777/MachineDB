@@ -198,6 +198,28 @@ function ClassCardExpanded({
   });
 
   const cell = cls.years.find((y) => y.year === year);
+  const [barHeight, setBarHeight] = useState(152);
+
+  // Drag-to-resize the bar chart vertically
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = barHeight;
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.min(800, Math.max(96, startH + (ev.clientY - startY)));
+      setBarHeight(next);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ns-resize';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
 
   return (
     <div style={{
@@ -205,7 +227,29 @@ function ClassCardExpanded({
       padding: '4px 24px 24px',
       background: 'linear-gradient(180deg, #fbfbfa, #ffffff)',
     }}>
-      <StackedBarChart cells={cls.years} tools={tools} />
+      <StackedBarChart cells={cls.years} tools={tools} barHeight={barHeight} />
+
+      {/* Drag handle to resize chart vertically */}
+      <div
+        onMouseDown={startResize}
+        title="Drag to resize chart"
+        style={{
+          height: 8,
+          margin: '6px -24px 0',
+          cursor: 'ns-resize',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0.5,
+          transition: 'opacity 200ms',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.5')}
+      >
+        <div style={{
+          width: 36, height: 3, borderRadius: 999, background: '#c4c4c2',
+        }} />
+      </div>
 
       {/* Per-machine drilldown table */}
       <div style={{ borderTop: '1px solid #ececea' }}>

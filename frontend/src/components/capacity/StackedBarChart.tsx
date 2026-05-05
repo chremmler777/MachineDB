@@ -2,16 +2,28 @@ import { useState } from 'react';
 import type { CapacityCell, Tool } from '../../types/capacity';
 import { ToolInfoCard } from './ToolInfoCard';
 
-// seg-1 through seg-4 cycling greens from v4
+// Muted editorial palette — soft pastels in the v4 aesthetic, varied hues so tools are distinguishable.
 const SEG_FILLS = [
-  '#d6e8de', // seg-1
-  '#c3ddcd', // seg-2
-  '#b0d2bc', // seg-3
-  '#9dc7ab', // seg-4
-  '#88baa0',
-  '#74ae95',
-  '#5fa189',
+  '#c3ddcd', // sage green
+  '#cfe0d6', // pale moss
+  '#d8d6cb', // warm stone
+  '#e5d4c3', // sand
+  '#e7cdc7', // dusty blush
+  '#dcc9d6', // muted mauve
+  '#cdc7d9', // soft lavender
+  '#c5cee0', // pale slate
+  '#bdd6e0', // dusty sky
+  '#bcd9d3', // sea foam
+  '#cad9b9', // pistachio
+  '#dbd2a8', // muted ochre
 ];
+
+// Stable color per tool_number — the same tool keeps the same swatch across years.
+function colorForTool(toolNumber: string): string {
+  let h = 0;
+  for (let i = 0; i < toolNumber.length; i++) h = (h * 31 + toolNumber.charCodeAt(i)) >>> 0;
+  return SEG_FILLS[h % SEG_FILLS.length];
+}
 
 function statusFreeColor(status: CapacityCell['status']): string {
   switch (status) {
@@ -28,24 +40,41 @@ export function StackedBarChart({
   cells,
   tools = [],
   onHoverTool,
+  barHeight = 152,
 }: {
   cells: CapacityCell[];
   tools?: Tool[];
   onHoverTool?: (toolNumber: string | null) => void;
+  barHeight?: number;
 }) {
   const [hover, setHover] = useState<HoverState>(null);
-  const BAR_H = 152;
+  const BAR_H = barHeight;
+
+  // Compute shared scale once so the available line and bars are uniform across all year columns.
+  const maxDemand = Math.max(...cells.map((c) => c.demand), 0);
+  const available = cells[0]?.available ?? 1;
+  const top = Math.max(available * 1.25, maxDemand, available);
+  const scale = top > 0 ? BAR_H / top : BAR_H;
+  const availLineFromBottom = available * scale;
+  const anyOverrun = cells.some((c) => c.demand > c.available);
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: `repeat(${cells.length}, 1fr)`,
-      gap: 18,
-      padding: '22px 0 6px',
-    }}>
-      {cells.map((cell) => {
-        // Scale: BAR_H pixels = available machines
-        const scale = cell.available > 0 ? BAR_H / cell.available : BAR_H;
+    <div style={{ position: 'relative', padding: '22px 0 6px' }}>
+      {/* Single solid available-line spanning all year columns at a consistent Y. */}
+      <div style={{
+        position: 'absolute',
+        left: 0, right: 0,
+        bottom: 6 + availLineFromBottom,
+        borderTop: `1.5px solid ${anyOverrun ? '#a84040' : '#1a1a1a'}`,
+        zIndex: 5,
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cells.length}, 1fr)`,
+        gap: 18,
+      }}>
+      {cells.map((cell, colIdx) => {
 
         let cumulative = 0;
 
@@ -66,7 +95,7 @@ export function StackedBarChart({
                 {cell.year}
               </span>
               <span style={{ fontFamily: "'Geist Mono', monospace" }}>
-                {cell.available.toFixed(2)}
+                {cell.available} mach
               </span>
             </div>
 
@@ -78,22 +107,7 @@ export function StackedBarChart({
               overflow: 'visible',
               background: 'repeating-linear-gradient(to top, transparent 0, transparent 24px, #ececea 24px, #ececea 25px)',
             }}>
-              {/* Available capacity dashed line at the top of full bar */}
-              <div style={{
-                position: 'absolute', left: -4, right: -4,
-                borderTop: '1.5px dashed #1a1a1a',
-                zIndex: 5,
-                bottom: BAR_H,
-              }} />
 
-              {/* Avail tag — only shown if line is visible within bar */}
-              <div style={{
-                position: 'absolute', right: 0, top: -16,
-                fontSize: 10, color: '#5a5a5e',
-                fontFamily: "'Geist Mono', monospace", letterSpacing: 0,
-              }}>
-                {cell.available.toFixed(2)}
-              </div>
 
               {/* Tool segments stacked bottom-up */}
               {cell.contributing_tools.map((t, i) => {
@@ -115,7 +129,9 @@ export function StackedBarChart({
                       transition: 'filter 180ms cubic-bezier(0.16, 1, 0.3, 1)',
                       bottom: segBottom,
                       height: segHeight,
-                      background: SEG_FILLS[i % SEG_FILLS.length],
+                      background: colorForTool(t.tool_number),
+                      border: '1px solid rgba(20,20,30,0.10)',
+                      boxSizing: 'border-box',
                       filter: isHovered ? 'brightness(1.04)' : undefined,
                       outline: isHovered ? '1.5px solid #1a1a1a' : undefined,
                       outlineOffset: isHovered ? -1 : undefined,
@@ -145,29 +161,30 @@ export function StackedBarChart({
                       </span>
                     )}
 
-                    {/* Hover infocard */}
+                    {/* Hover infocard — anchor away from container edges */}
                     {isHovered && fullTool && (
                       <ToolInfoCard
                         tool={fullTool}
                         machEquiv={t.mach_equivalents}
                         year={cell.year}
                         piecesPerYear={undefined}
+                        align={colIdx <= 1 ? 'left' : colIdx >= cells.length - 2 ? 'right' : 'center'}
                       />
                     )}
                   </div>
                 );
               })}
 
-              {/* Demand overflow indicator if demand > available */}
+              {/* Overrun band: subtle red wash above the available line when demand > available */}
               {cell.demand > cell.available && (
                 <div style={{
                   position: 'absolute',
-                  left: 4, right: 4,
-                  bottom: BAR_H,
-                  height: Math.min((cell.demand - cell.available) * scale, 20),
-                  background: 'rgba(168,64,64,0.12)',
-                  borderRadius: 3,
-                  border: '1px dashed #a84040',
+                  left: 0, right: 0,
+                  bottom: availLineFromBottom,
+                  height: BAR_H - availLineFromBottom,
+                  background: 'rgba(168,64,64,0.06)',
+                  pointerEvents: 'none',
+                  zIndex: 1,
                 }} />
               )}
             </div>
@@ -197,6 +214,7 @@ export function StackedBarChart({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

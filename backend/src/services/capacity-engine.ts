@@ -299,9 +299,12 @@ export function computeCapacity(input: {
       for (const tool of classTools) {
         const vol = volumes.find(vv => vv.tool_id === tool.id && vv.year === year);
         if (!vol || vol.pieces_per_year <= 0 || hours_per_machine <= 0) continue;
+        if (!tool.cavities || !tool.rated_cycle_time_sec) continue;
         const pph = (tool.cavities * 3600) / tool.rated_cycle_time_sec;
+        if (!Number.isFinite(pph) || pph <= 0) continue;
         const hours = vol.pieces_per_year / pph;
         const me = hours / hours_per_machine;
+        if (!Number.isFinite(me)) continue;
         demand += me;
         contributing.push({ tool_number: tool.tool_number, mach_equivalents: me });
       }

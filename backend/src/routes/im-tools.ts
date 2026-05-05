@@ -13,11 +13,21 @@ const TOOL_COLS = [
 
 const VALID_STATUSES = ['active', 'inactive', 'candidate'];
 
+// pg returns NUMERIC columns as strings — coerce to numbers for the JSON API.
+const NUMERIC_COLS = ['cavities', 'rated_cycle_time_sec', 'operator_fte', 'raw_material_kg_per_piece',
+  'qualified_min_tonnage_t', 'qualified_max_tonnage_t', 'shot_volume_required_cm3'];
+function numerize(row: any) {
+  if (!row) return row;
+  const out: any = { ...row };
+  for (const k of NUMERIC_COLS) if (out[k] != null) out[k] = Number(out[k]);
+  return out;
+}
+
 // GET /api/im-tools — list all tools
 router.get('/', async (_req, res) => {
   try {
     const r = await pool.query('SELECT * FROM im_tools ORDER BY tool_number');
-    res.json(r.rows);
+    res.json(r.rows.map(numerize));
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }
@@ -28,7 +38,7 @@ router.get('/:id', async (req, res) => {
   try {
     const r = await pool.query('SELECT * FROM im_tools WHERE id = $1', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'Tool not found' });
-    res.json(r.rows[0]);
+    res.json(numerize(r.rows[0]));
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }
