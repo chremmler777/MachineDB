@@ -24,6 +24,39 @@ export type ToolQualification = {
 
 export type QualResult = { ok: boolean; reason?: string };
 
+/**
+ * Months a machine is active during calendar year `year`, based on month-precision
+ * lifecycle dates. Day component is ignored — `2026-10-15` and `2026-10-01` both
+ * mean "active starting October".
+ *
+ * @param inServiceFrom    'YYYY-MM-DD' or null (null = always-on from -∞)
+ * @param plannedScrapFrom 'YYYY-MM-DD' or null (null = no scrap planned, +∞)
+ * @param year             integer calendar year
+ * @returns integer 0..12
+ */
+export function monthsActiveInYear(
+  inServiceFrom: string | null,
+  plannedScrapFrom: string | null,
+  year: number,
+): number {
+  // Convert each bound to "month index" = year*12 + (month-1).
+  const yearStartIdx = year * 12;       // Jan of `year`
+  const yearEndIdx   = (year + 1) * 12; // Jan of `year+1`
+
+  const startIdx = inServiceFrom
+    ? Number(inServiceFrom.slice(0, 4)) * 12 + (Number(inServiceFrom.slice(5, 7)) - 1)
+    : -Infinity;
+  const endIdx = plannedScrapFrom
+    ? Number(plannedScrapFrom.slice(0, 4)) * 12 + (Number(plannedScrapFrom.slice(5, 7)) - 1)
+    : Infinity;
+
+  if (endIdx <= startIdx) return 0; // defensive: scrap not strictly after in-service
+
+  const overlapStart = Math.max(startIdx, yearStartIdx);
+  const overlapEnd   = Math.min(endIdx, yearEndIdx);
+  return Math.max(0, overlapEnd - overlapStart);
+}
+
 export function qualifies(m: MachineRow, t: ToolQualification): QualResult {
   const tonnage_t = m.clamping_force_kn;
 
