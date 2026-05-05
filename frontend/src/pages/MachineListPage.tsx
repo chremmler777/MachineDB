@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { machineService, fileService } from '../services/api';
+import { LifecycleBadge } from '../components/LifecycleBadge';
 import { useLanguage } from '../context/LanguageContext';
 
 interface MachineListPageProps {
@@ -634,6 +635,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                             <span style={{ flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}
                             </span>
+                            <LifecycleBadge inServiceFrom={m.in_service_from} plannedScrapFrom={m.planned_scrap_from} />
                             {m.wam_file_id && (
                               <button
                                 onClick={e => handleWamView(m.wam_file_id, m.wam_file_name, e)}
