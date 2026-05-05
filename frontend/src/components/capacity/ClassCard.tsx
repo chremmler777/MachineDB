@@ -126,10 +126,10 @@ function ClassCardExpanded({
   tools: Tool[];
   year: number;
 }) {
-  // Filter machines belonging to this capacity class by tonnage bucket + capability flags
+  // Filter machines belonging to this capacity class by tonnage bucket + capability flags.
+  // NOTE: clamping_force_kn stores tons (legacy mis-named column) — use directly, no conversion.
   const classMachines = machines.filter((m) => {
-    const t =
-      m.clamping_force_kn != null ? m.clamping_force_kn / 9.80665 : null;
+    const t = m.clamping_force_kn;
     if (t == null) return false;
     return (
       Math.abs(t - cls.tonnage_t) / cls.tonnage_t < 0.3 &&
