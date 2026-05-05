@@ -230,6 +230,29 @@ const migrations = [
 
   `CREATE INDEX IF NOT EXISTS idx_im_tools_assigned ON im_tools(assigned_machine_id)`,
   `CREATE INDEX IF NOT EXISTS idx_im_tools_status ON im_tools(status)`,
+
+  `CREATE TABLE IF NOT EXISTS im_tool_volumes (
+    tool_id INT NOT NULL REFERENCES im_tools(id) ON DELETE CASCADE,
+    year INT NOT NULL,
+    pieces_per_year NUMERIC NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT,
+    PRIMARY KEY (tool_id, year)
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS im_class_capacity (
+    tonnage_t INT NOT NULL,
+    requires_2k BOOLEAN NOT NULL DEFAULT FALSE,
+    requires_mucell BOOLEAN NOT NULL DEFAULT FALSE,
+    requires_variotherm BOOLEAN NOT NULL DEFAULT FALSE,
+    year INT NOT NULL,
+    oee_pct NUMERIC NOT NULL DEFAULT 85,
+    shifts_per_week NUMERIC NOT NULL DEFAULT 15,
+    working_days_year INT NOT NULL DEFAULT 240,
+    planned_downtime_wk NUMERIC NOT NULL DEFAULT 2,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tonnage_t, requires_2k, requires_mucell, requires_variotherm, year)
+  )`,
 ];
 
 async function runMigrations() {
