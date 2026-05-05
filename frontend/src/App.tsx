@@ -6,9 +6,10 @@ import { MachineListPage } from './pages/MachineListPage';
 import { MachineDetailPage } from './pages/MachineDetailPage';
 import { MachineFinder } from './pages/MachineFinder';
 import { AdminPanel } from './pages/AdminPanel';
+import { CapacityOverviewPage } from './pages/CapacityOverviewPage';
 
 // Simple routing context
-type CurrentPage = 'login' | 'dashboard' | 'machines' | 'machine' | 'finder' | 'admin';
+type CurrentPage = 'login' | 'dashboard' | 'machines' | 'machine' | 'finder' | 'admin' | 'capacity';
 interface RouteState {
   page: CurrentPage;
   params?: any;
@@ -82,6 +83,12 @@ const AppContent: React.FC = () => {
             >
               {t('nav.finder')}
             </button>
+            <button
+              onClick={() => navigate('capacity')}
+              className={`px-3 py-2 rounded ${activePage === 'capacity' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+            >
+              Capacity
+            </button>
             {user.role === 'master' && (
               <button
                 onClick={() => navigate('admin')}
@@ -119,6 +126,7 @@ const AppContent: React.FC = () => {
       {activePage === 'machine' && <MachineDetailPage machineId={route.params} onNavigate={navigate} darkMode={darkMode} />}
       {activePage === 'finder' && <MachineFinder onNavigate={navigate} darkMode={darkMode} />}
       {activePage === 'admin' && user.role === 'master' && <AdminPanel darkMode={darkMode} onNavigate={navigate} />}
+      {activePage === 'capacity' && <CapacityOverviewPage />}
     </div>
   );
 };
