@@ -23,12 +23,11 @@ export function Sparkline({ cells }: { cells: CapacityCell[] }) {
 
   return (
     <svg
-      className="w-full"
-      style={{ height: h }}
+      style={{ width: '100%', height: h, display: 'block' }}
       viewBox={`0 0 ${totalW} ${h}`}
       preserveAspectRatio="none"
     >
-      {/* baseline dashed line at full available capacity (top) */}
+      {/* Baseline dashed line at available capacity (top) */}
       <line
         x1={0}
         y1={5}

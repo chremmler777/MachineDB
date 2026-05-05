@@ -19,11 +19,18 @@ export function MachineRow({
   onDropTool: (toolId: number, targetMachineId: number) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const buildYearShort =
     machine.year_of_construction != null
       ? `'${String(machine.year_of_construction).slice(2)}`
       : '—';
+
+  const rowBg = dragOver
+    ? '#e6edf6'
+    : hovered
+    ? '#fafaf8'
+    : 'transparent';
 
   return (
     <div
@@ -35,73 +42,128 @@ export function MachineRow({
         const rawId = e.dataTransfer.getData('application/x-tool-id');
         if (rawId) onDropTool(Number(rawId), machine.id);
       }}
-      className={`grid grid-cols-[220px_160px_1fr_180px] py-4 px-1 items-center border-b border-[#ececea] transition-colors ${
-        dragOver
-          ? 'bg-[#e6edf6] ring-1 ring-inset ring-[#2c5fa0]/30'
-          : 'hover:bg-[#fafaf8]'
-      }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '220px 160px 1fr 180px',
+        padding: '16px 4px',
+        alignItems: 'center',
+        borderBottom: '1px solid #ececea',
+        transition: 'background 160ms',
+        background: rowBg,
+        boxShadow: dragOver ? 'inset 0 0 0 1px rgba(44,95,160,0.3)' : undefined,
+      }}
     >
       {/* Press name */}
-      <div className="text-[13px] font-medium tracking-tight">
+      <div style={{ fontSize: 13, fontWeight: 500, letterSpacing: '-0.01em' }}>
         {machine.internal_name}
       </div>
 
-      {/* Build year (manufacturer + year) — no shot volume, no clamping force per §7.1 */}
-      <div className="text-xs text-[#5a5a5e]">
-        {machine.manufacturer ?? '—'}{' '}
-        <span className="font-mono text-[#8a8a8e] ml-1">{buildYearShort}</span>
+      {/* Build: manufacturer + year */}
+      <div style={{ fontSize: 12, color: '#5a5a5e' }}>
+        {machine.manufacturer ?? '—'}
+        <span style={{
+          fontFamily: "'Geist Mono', monospace",
+          color: '#8a8a8e', marginLeft: 4,
+        }}>
+          {buildYearShort}
+        </span>
       </div>
 
-      {/* Running tool chips */}
-      <div className="flex gap-1 flex-wrap items-center">
+      {/* Tool chips */}
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
         {tools.length === 0 ? (
-          <span
-            className={`px-2.5 py-0.5 border border-dashed rounded-full text-[11px] transition-colors ${
-              dragOver
-                ? 'border-[#2c5fa0] text-[#2c5fa0]'
-                : 'border-[#ececea] text-[#8a8a8e]'
-            }`}
-          >
+          <span style={{
+            padding: '3px 10px',
+            borderStyle: 'dashed',
+            border: dragOver ? '1px dashed #2c5fa0' : '1px dashed #ececea',
+            borderRadius: 999,
+            fontSize: 11,
+            fontFamily: "'Geist Mono', monospace",
+            color: dragOver ? '#2c5fa0' : '#8a8a8e',
+            fontStyle: 'italic',
+            background: 'transparent',
+          }}>
             {dragOver ? 'drop tool here' : '— available —'}
           </span>
         ) : (
-          tools.map((t) => (
-            <span
-              key={t.id}
-              draggable
-              className="px-2.5 py-0.5 bg-[#f7f7f5] border border-[#ececea] rounded-full text-[11px] font-mono text-[#5a5a5e] cursor-grab hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors active:cursor-grabbing"
-              onDragStart={(e) =>
-                e.dataTransfer.setData('application/x-tool-id', String(t.id))
-              }
-            >
-              {t.tool_number}
-            </span>
-          ))
-        )}
-        {tools.length > 0 && dragOver && (
-          <span className="px-2 py-0.5 border border-dashed border-[#2c5fa0] rounded-full text-[10px] text-[#2c5fa0] ml-1">
-            + drop here
-          </span>
+          <>
+            {tools.map((t) => (
+              <span
+                key={t.id}
+                draggable
+                style={{
+                  padding: '3px 10px',
+                  background: '#f7f7f5',
+                  border: '1px solid #ececea',
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontFamily: "'Geist Mono', monospace",
+                  color: '#5a5a5e',
+                  cursor: 'grab',
+                  transition: 'border-color 160ms, color 160ms',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#1a1a1a';
+                  (e.currentTarget as HTMLElement).style.color = '#1a1a1a';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#ececea';
+                  (e.currentTarget as HTMLElement).style.color = '#5a5a5e';
+                }}
+                onDragStart={(e) =>
+                  e.dataTransfer.setData('application/x-tool-id', String(t.id))
+                }
+              >
+                {t.tool_number}
+              </span>
+            ))}
+            {dragOver && (
+              <span style={{
+                padding: '3px 8px',
+                border: '1px dashed #2c5fa0',
+                borderRadius: 999,
+                fontSize: 10,
+                color: '#2c5fa0',
+                marginLeft: 4,
+              }}>
+                + drop here
+              </span>
+            )}
+          </>
         )}
       </div>
 
       {/* Utilisation bar with target marker at 85% */}
-      <div className="flex items-center gap-2.5 justify-end">
-        <div className="relative w-24 h-[5px] bg-[#ececea] rounded-full overflow-hidden">
-          <div
-            className="absolute inset-0 right-auto rounded-full"
-            style={{
-              width: `${Math.min(utilPct, 100)}%`,
-              background: utilFillColor(utilPct),
-            }}
-          />
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end',
+      }}>
+        <div style={{
+          position: 'relative',
+          width: 96, height: 5,
+          background: '#ececea', borderRadius: 999, overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', inset: '0 auto 0 0',
+            borderRadius: 999,
+            width: `${Math.min(utilPct, 100)}%`,
+            background: utilFillColor(utilPct),
+          }} />
           {/* Target marker at 85% */}
-          <div
-            className="absolute -top-0.5 -bottom-0.5 w-px bg-[#8a8a8e]"
-            style={{ left: '85%' }}
-          />
+          <div style={{
+            position: 'absolute',
+            top: -2, bottom: -2, width: 1,
+            background: '#8a8a8e',
+            left: '85%',
+          }} />
         </div>
-        <div className="font-mono text-xs min-w-[38px] text-right">
+        <div style={{
+          fontFamily: "'Geist Mono', monospace",
+          fontSize: 12,
+          minWidth: 38, textAlign: 'right',
+          color: utilPct === 0 ? '#2f6f4f' : '#1a1a1a',
+        }}>
           {utilPct.toFixed(0)}%
         </div>
       </div>

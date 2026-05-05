@@ -25,6 +25,7 @@ export function ClassCard({
   onMoveTool: (toolId: number, targetMachineId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [dragTargeted, setDragTargeted] = useState(false);
 
   const headlineCell = cls.years.find((y) => y.year === year) ?? cls.years[0];
   const worst = cls.years.reduce(
@@ -32,33 +33,84 @@ export function ClassCard({
     cls.years[0],
   );
 
+  // Sub-line items
+  const subItems: string[] = [
+    `${cls.machines} press${cls.machines !== 1 ? 'es' : ''}`,
+    ...(cls.requires_2k ? ['2K'] : []),
+    ...(cls.requires_mucell ? ['MuCell'] : []),
+    ...(cls.requires_variotherm ? ['Variotherm'] : []),
+    `${cls.shifts_per_week} sh / week`,
+  ];
+
   return (
     <div
-      className="bg-white border border-[#ececea] rounded-[22px] mb-3.5 overflow-hidden"
+      onDragOver={(e) => { e.preventDefault(); setDragTargeted(true); }}
+      onDragLeave={() => setDragTargeted(false)}
+      onDrop={() => setDragTargeted(false)}
       style={{
-        boxShadow:
-          '0 1px 0 rgba(20,20,30,0.02), 0 14px 32px -22px rgba(20,20,30,0.08)',
+        background: '#ffffff',
+        border: dragTargeted ? '1px solid #2c5fa0' : '1px solid #ececea',
+        borderRadius: 22,
+        boxShadow: dragTargeted
+          ? '0 0 0 4px #e6edf6, 0 14px 32px -22px rgba(20,20,30,0.08)'
+          : '0 1px 0 rgba(20,20,30,0.02), 0 14px 32px -22px rgba(20,20,30,0.08)',
+        overflow: 'hidden',
+        marginBottom: 14,
+        position: 'relative',
       }}
     >
-      {/* Collapsed header row */}
+      {/* Drop banner */}
+      {dragTargeted && (
+        <span style={{
+          position: 'absolute', top: 16, right: 24,
+          fontFamily: "'Geist Mono', monospace", fontSize: 11, color: '#2c5fa0',
+          display: 'flex', alignItems: 'center', gap: 6,
+          zIndex: 10,
+        }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%', background: '#2c5fa0', display: 'inline-block',
+          }} />
+          drop tool here to simulate move
+        </span>
+      )}
+
+      {/* Collapsed header */}
       <div
-        className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)_auto] items-center gap-6 p-6 cursor-pointer"
         onClick={() => setOpen(!open)}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 2fr) auto',
+          alignItems: 'center',
+          padding: '22px 24px',
+          cursor: 'pointer',
+          gap: 24,
+        }}
       >
-        {/* Left: label + meta */}
+        {/* Left: name + sub */}
         <div>
-          <div className="text-base font-medium tracking-tight">
-            <span className="text-[#8a8a8e] mr-2 font-mono text-xs">
+          <div style={{ fontSize: 16, fontWeight: 500, letterSpacing: '-0.015em' }}>
+            <span style={{
+              display: 'inline-block', color: '#8a8a8e', marginRight: 6,
+              fontFamily: "'Geist Mono', monospace", fontSize: 11,
+              transition: 'transform 200ms',
+              transform: open ? 'none' : 'none',
+            }}>
               {open ? '▾' : '▸'}
             </span>
             {cls.label}
           </div>
-          <div className="text-xs text-[#8a8a8e] mt-1 flex gap-2.5 flex-wrap">
-            <span>{cls.machines} presses</span>
-            {cls.requires_2k && <span>2K</span>}
-            {cls.requires_mucell && <span>MuCell</span>}
-            {cls.requires_variotherm && <span>Variotherm</span>}
-            <span>{cls.shifts_per_week} sh/week</span>
+          <div style={{
+            fontSize: 12, color: '#8a8a8e', marginTop: 4,
+            display: 'flex', gap: 10,
+          }}>
+            {subItems.map((item, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                {item}
+                {i < subItems.length - 1 && (
+                  <span style={{ color: '#e1e1de', marginLeft: 0 }}>·</span>
+                )}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -67,36 +119,37 @@ export function ClassCard({
           <Sparkline cells={cls.years} />
         </div>
 
-        {/* Right: headline status */}
-        <div className="flex flex-col items-end gap-1 text-[12.5px]">
-          <div className="flex items-center gap-2 text-[#5a5a5e]">
-            <span
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ background: DOT_COLOR[headlineCell.status] }}
-            />
+        {/* Right: headline */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+          gap: 4, fontSize: 12.5,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5a5a5e' }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+              background: DOT_COLOR[headlineCell.status],
+            }} />
             <span>
               &apos;{String(headlineCell.year).slice(2)}{' '}
-              <b className="font-mono font-medium text-[#1a1a1a]">
-                {headlineCell.free >= 0 ? '+' : ''}
-                {headlineCell.free.toFixed(2)}
+              <b style={{ fontFamily: "'Geist Mono', monospace", fontWeight: 500, color: '#1a1a1a' }}>
+                {headlineCell.free >= 0 ? '+' : ''}{headlineCell.free.toFixed(2)}
               </b>{' '}
               free
             </span>
-            <span className="text-[#8a8a8e]">
+            <span style={{ color: '#8a8a8e', marginLeft: 4 }}>
               / {headlineCell.utilization_pct.toFixed(0)}%
             </span>
           </div>
           {worst.year !== headlineCell.year && (
-            <div className="flex items-center gap-2 text-[#5a5a5e]">
-              <span
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ background: DOT_COLOR[worst.status] }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5a5a5e' }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                background: DOT_COLOR[worst.status],
+              }} />
               <span>
                 &apos;{String(worst.year).slice(2)}{' '}
-                <b className="font-mono font-medium text-[#1a1a1a]">
-                  {worst.free >= 0 ? '+' : ''}
-                  {worst.free.toFixed(2)}
+                <b style={{ fontFamily: "'Geist Mono', monospace", fontWeight: 500, color: '#1a1a1a' }}>
+                  {worst.free >= 0 ? '+' : ''}{worst.free.toFixed(2)}
                 </b>
               </span>
             </div>
@@ -147,20 +200,30 @@ function ClassCardExpanded({
   const cell = cls.years.find((y) => y.year === year);
 
   return (
-    <div
-      className="border-t border-[#ececea] px-6 pb-6"
-      style={{ background: 'linear-gradient(180deg, #fbfbfa, #ffffff)' }}
-    >
+    <div style={{
+      borderTop: '1px solid #ececea',
+      padding: '4px 24px 24px',
+      background: 'linear-gradient(180deg, #fbfbfa, #ffffff)',
+    }}>
       <StackedBarChart cells={cls.years} tools={tools} />
 
       {/* Per-machine drilldown table */}
-      <div className="border-t border-[#ececea] mt-6">
-        <div className="grid grid-cols-[220px_160px_1fr_180px] py-3.5 px-1 text-[10.5px] text-[#8a8a8e] uppercase tracking-wider border-b border-[#ececea]">
+      <div style={{ borderTop: '1px solid #ececea' }}>
+        {/* Table header */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '220px 160px 1fr 180px',
+          padding: '14px 4px',
+          fontSize: 10.5, color: '#8a8a8e',
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          borderBottom: '1px solid #ececea',
+        }}>
           <div>Press</div>
           <div>Build</div>
           <div>Tools running &apos;{String(year).slice(2)}</div>
-          <div className="text-right">Util &apos;{String(year).slice(2)}</div>
+          <div style={{ textAlign: 'right' }}>Util &apos;{String(year).slice(2)}</div>
         </div>
+
         {classMachines.map((m) => {
           const machineTools = tools.filter(
             (t) => t.assigned_machine_id === m.id,

@@ -13,40 +13,81 @@ export function ToolInfoCard({
 }) {
   return (
     <div
-      className="absolute bottom-[calc(100%+10px)] left-1/2 z-20 w-[236px] bg-white border border-[#ececea] rounded-xl p-3.5 pointer-events-none"
       style={{
+        position: 'absolute',
+        bottom: 'calc(100% + 12px)',
+        left: '50%',
         transform: 'translateX(-50%)',
-        boxShadow: '0 12px 32px -12px rgba(20,20,30,0.18), 0 2px 8px -4px rgba(20,20,30,0.08)',
+        background: '#ffffff',
+        border: '1px solid #ececea',
+        borderRadius: 14,
+        padding: '14px 16px',
+        width: 232,
+        boxShadow: '0 12px 32px -12px rgba(20,20,30,0.18)',
+        zIndex: 20,
+        fontSize: 12,
+        pointerEvents: 'none',
       }}
     >
-      <div className="text-[13px] font-medium leading-snug">
+      {/* Arrow indicator */}
+      <span style={{
+        content: '',
+        position: 'absolute',
+        left: '50%',
+        transform: 'translateX(-50%) rotate(45deg)',
+        bottom: -6,
+        width: 10, height: 10,
+        background: '#ffffff',
+        borderRight: '1px solid #ececea',
+        borderBottom: '1px solid #ececea',
+        display: 'block',
+      }} />
+
+      {/* Tool number + description */}
+      <h5 style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>
         {tool.tool_number}
         {tool.description && (
-          <span className="text-[#5a5a5e] font-normal"> — {tool.description}</span>
+          <span style={{ fontWeight: 400, color: '#5a5a5e' }}> — {tool.description}</span>
         )}
-      </div>
+      </h5>
+
+      {/* Customer / program */}
       {(tool.customer || tool.program) && (
-        <div className="text-[11px] text-[#8a8a8e] mt-0.5">
+        <div style={{ color: '#8a8a8e', fontSize: 11, marginTop: 2 }}>
           {tool.customer}
           {tool.customer && tool.program && ' / '}
           {tool.program}
         </div>
       )}
-      <div className="mt-2.5 pt-2.5 border-t border-[#ececea] flex flex-col gap-1.5">
-        <Row label="Cavities" value={String(tool.cavities)} />
-        <Row label="Cycle time" value={`${tool.rated_cycle_time_sec.toFixed(0)} s`} />
-        <Row label={`Pieces '${String(year).slice(2)}`} value={piecesPerYear != null ? piecesPerYear.toLocaleString() : '—'} />
-        <Row label="Mach. equiv." value={machEquiv.toFixed(2)} />
+
+      {/* Key/value rows */}
+      <div style={{
+        marginTop: 10, paddingTop: 10,
+        borderTop: '1px solid #ececea',
+        display: 'flex', flexDirection: 'column', gap: 5,
+      }}>
+        <InfoRow label="Cavities" value={String(tool.cavities)} />
+        <InfoRow label="Cycle time" value={`${tool.rated_cycle_time_sec.toFixed(0)} s`} />
+        <InfoRow
+          label={`Pieces '${String(year).slice(2)}`}
+          value={piecesPerYear != null ? piecesPerYear.toLocaleString() : '—'}
+        />
+        <InfoRow label="Mach. equiv." value={machEquiv.toFixed(2)} />
       </div>
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between text-[11.5px]">
-      <span className="text-[#5a5a5e]">{label}</span>
-      <b className="font-mono font-medium text-[#1a1a1a]">{value}</b>
+    <div style={{
+      display: 'flex', justifyContent: 'space-between',
+      color: '#5a5a5e', fontSize: 11.5,
+    }}>
+      <span>{label}</span>
+      <b style={{ color: '#1a1a1a', fontFamily: "'Geist Mono', monospace", fontWeight: 500 }}>
+        {value}
+      </b>
     </div>
   );
 }
