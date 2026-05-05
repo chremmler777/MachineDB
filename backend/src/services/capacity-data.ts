@@ -29,7 +29,9 @@ export async function loadCapacityInputs(
               iu1_shot_volume_cm3,
               COALESCE(is_2k, false) AS is_2k,
               COALESCE(has_mucell, false) AS has_mucell,
-              COALESCE(has_variotherm, false) AS has_variotherm
+              COALESCE(has_variotherm, false) AS has_variotherm,
+              to_char(in_service_from,    'YYYY-MM-DD') AS in_service_from,
+              to_char(planned_scrap_from, 'YYYY-MM-DD') AS planned_scrap_from
        FROM machines
        ${plantFilter}`,
       machineParams,
@@ -65,6 +67,8 @@ export async function loadCapacityInputs(
     is_2k: Boolean(r.is_2k),
     has_mucell: Boolean(r.has_mucell),
     has_variotherm: Boolean(r.has_variotherm),
+    in_service_from: r.in_service_from ?? null,
+    planned_scrap_from: r.planned_scrap_from ?? null,
   }));
 
   const tools: Tool[] = toolsResult.rows.map(r => ({

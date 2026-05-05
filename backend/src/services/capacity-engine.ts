@@ -11,6 +11,8 @@ export type MachineRow = {
   is_2k: boolean;
   has_mucell: boolean;
   has_variotherm: boolean;
+  in_service_from: string | null;     // 'YYYY-MM-DD' or null (= always-on)
+  planned_scrap_from: string | null;  // 'YYYY-MM-DD' or null (= no scrap)
 };
 
 export type ToolQualification = {
