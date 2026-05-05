@@ -10,7 +10,7 @@ interface AdminPanelProps {
 type FieldDef = {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'boolean' | 'textarea' | 'select';
+  type: 'text' | 'number' | 'boolean' | 'textarea' | 'select' | 'month';
   unit?: string;
   required?: boolean;
   options?: { value: string; label: string }[];
@@ -132,6 +132,13 @@ const FORM_SECTIONS: SectionDef[] = [
       { key: 'remarks', label: 'Remarks', type: 'textarea' },
     ]
   },
+  {
+    titleKey: 'Lifecycle',
+    fields: [
+      { key: 'in_service_from',    label: 'In service from',    type: 'month' },
+      { key: 'planned_scrap_from', label: 'Planned scrap from', type: 'month' },
+    ],
+  },
 ];
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
@@ -209,8 +216,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
     const fd: Record<string, any> = {};
     FORM_SECTIONS.forEach(s => s.fields.forEach(f => {
       const v = machine[f.key];
-      if (f.type === 'boolean') fd[f.key] = v === true ? 'true' : v === false ? 'false' : '';
-      else fd[f.key] = v === null || v === undefined ? '' : String(v);
+      if (f.type === 'month') {
+        fd[f.key] = typeof v === 'string' && v.length >= 7 ? v.slice(0, 7) : '';
+      } else if (f.type === 'boolean') {
+        fd[f.key] = v === true ? 'true' : v === false ? 'false' : '';
+      } else {
+        fd[f.key] = v === null || v === undefined ? '' : String(v);
+      }
     }));
     setFormData(fd);
     setSuspiciousFields(Array.isArray(machine.suspicious_fields) ? machine.suspicious_fields : []);
@@ -251,6 +263,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       const v = formData[f.key];
       if (v === '' || v === undefined) {
         payload[f.key] = null;
+      } else if (f.type === 'month') {
+        payload[f.key] = `${v}-01`;
       } else if (f.type === 'number') {
         payload[f.key] = parseFloat(v) || null;
       } else if (f.type === 'boolean') {
@@ -265,6 +279,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
   const handleSave = async () => {
     const name = formData['internal_name']?.trim();
     if (!name) { setSaveMsg('Machine name is required'); return; }
+    const svc = formData['in_service_from'];
+    const scr = formData['planned_scrap_from'];
+    if (svc && scr && scr <= svc) {
+      setSaveMsg('Planned scrap from must be after In service from');
+      return;
+    }
     setSaving(true);
     setSaveMsg('');
     try {
@@ -335,8 +355,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       const fd: Record<string, any> = {};
       FORM_SECTIONS.forEach(s => s.fields.forEach(f => {
         const v = machine[f.key];
-        if (f.type === 'boolean') fd[f.key] = v === true ? 'true' : v === false ? 'false' : '';
-        else fd[f.key] = v === null || v === undefined ? '' : String(v);
+        if (f.type === 'month') {
+          fd[f.key] = typeof v === 'string' && v.length >= 7 ? v.slice(0, 7) : '';
+        } else if (f.type === 'boolean') {
+          fd[f.key] = v === true ? 'true' : v === false ? 'false' : '';
+        } else {
+          fd[f.key] = v === null || v === undefined ? '' : String(v);
+        }
       }));
       setFormData(fd);
       setSuspiciousFields(Array.isArray(machine.suspicious_fields) ? machine.suspicious_fields : []);
@@ -455,6 +480,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
         backgroundColor: isSusp ? 'rgba(251, 146, 60, 0.08)' : inputBg,
         border: `1px solid ${isSusp ? 'rgba(251,146,60,0.6)' : borderColor}`,
       };
+      if (f.type === 'month') {
+        return (
+          <input
+            type="month"
+            style={style}
+            value={formData[f.key] ?? ''}
+            onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
+          />
+        );
+      }
       if (f.type === 'boolean') {
         return (
           <select style={style} value={formData[f.key] ?? ''} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}>
