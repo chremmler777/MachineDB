@@ -249,10 +249,20 @@ export function computeCapacity(input: {
 
     const machineIds = new Set(machines.map(m => m.id));
 
-    // Collect tools assigned to any machine in this class.
-    const classTools = tools.filter(
-      t => t.assigned_machine_id != null && machineIds.has(t.assigned_machine_id),
-    );
+    // Collect tools belonging to this class:
+    //   • Explicitly assigned to a machine in this class, OR
+    //   • Unassigned but qualified to this exact class (qualified_min == qualified_max == tonnage_t,
+    //     and capability flags match). Importer sets min==max==sheet-class for class-level data.
+    const classTools = tools.filter(t => {
+      if (t.assigned_machine_id != null) return machineIds.has(t.assigned_machine_id);
+      return (
+        t.qualified_min_tonnage_t === tonnage_t &&
+        t.qualified_max_tonnage_t === tonnage_t &&
+        t.requires_2k === requires_2k &&
+        t.requires_mucell === requires_mucell &&
+        t.requires_variotherm === requires_variotherm
+      );
+    });
 
     const yearCells: CapacityCell[] = [];
 

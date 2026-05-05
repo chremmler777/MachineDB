@@ -41,8 +41,7 @@ export async function loadCapacityInputs(
               requires_2k, requires_mucell, requires_variotherm,
               assigned_machine_id, status
        FROM im_tools
-       WHERE status IN ('active', 'candidate')
-         AND assigned_machine_id IS NOT NULL`,
+       WHERE status IN ('active', 'candidate')`,
     ),
     pool.query(
       `SELECT tool_id, year, pieces_per_year
