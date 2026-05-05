@@ -1,4 +1,6 @@
-import type { CapacityCell } from '../../types/capacity';
+import { useState } from 'react';
+import type { CapacityCell, Tool } from '../../types/capacity';
+import { ToolInfoCard } from './ToolInfoCard';
 
 const SEG_FILLS = [
   '#d6e8de',
@@ -23,13 +25,18 @@ function statusTextClass(status: CapacityCell['status']): string {
   }
 }
 
+type HoverState = { year: number; toolNumber: string } | null;
+
 export function StackedBarChart({
   cells,
+  tools = [],
   onHoverTool,
 }: {
   cells: CapacityCell[];
+  tools?: Tool[];
   onHoverTool?: (toolNumber: string | null) => void;
 }) {
+  const [hover, setHover] = useState<HoverState>(null);
   const BAR_H = 152;
 
   return (
@@ -78,14 +85,32 @@ export function StackedBarChart({
                       background: SEG_FILLS[i % SEG_FILLS.length],
                     }}
                     title={`${t.tool_number} · ${t.mach_equivalents.toFixed(2)} mach`}
-                    onMouseEnter={() => onHoverTool?.(t.tool_number)}
-                    onMouseLeave={() => onHoverTool?.(null)}
+                    onMouseEnter={() => {
+                      setHover({ year: cell.year, toolNumber: t.tool_number });
+                      onHoverTool?.(t.tool_number);
+                    }}
+                    onMouseLeave={() => {
+                      setHover(null);
+                      onHoverTool?.(null);
+                    }}
                   >
                     {segHeight > 14 && (
                       <span className="absolute left-1.5 right-1.5 bottom-[3px] text-[10.5px] font-mono text-black/60 truncate block">
                         {t.tool_number}
                       </span>
                     )}
+                    {hover?.year === cell.year && hover.toolNumber === t.tool_number && (() => {
+                      const fullTool = tools.find((ft) => ft.tool_number === t.tool_number);
+                      if (!fullTool) return null;
+                      return (
+                        <ToolInfoCard
+                          tool={fullTool}
+                          machEquiv={t.mach_equivalents}
+                          year={cell.year}
+                          piecesPerYear={undefined}
+                        />
+                      );
+                    })()}
                   </div>
                 );
               })}
