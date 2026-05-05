@@ -253,6 +253,17 @@ const migrations = [
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (tonnage_t, requires_2k, requires_mucell, requires_variotherm, year)
   )`,
+
+  `CREATE TABLE IF NOT EXISTS im_scenarios (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    modifications JSONB NOT NULL DEFAULT '[]'::jsonb,
+    owner TEXT,
+    combined_from INT[] DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
 ];
 
 async function runMigrations() {
