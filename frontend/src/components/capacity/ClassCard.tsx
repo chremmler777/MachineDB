@@ -16,11 +16,13 @@ export function ClassCard({
   machines,
   tools,
   year,
+  onMoveTool,
 }: {
   cls: CapacityClass;
   machines: Machine[];
   tools: Tool[];
   year: number;
+  onMoveTool: (toolId: number, targetMachineId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -109,6 +111,7 @@ export function ClassCard({
           machines={machines}
           tools={tools}
           year={year}
+          onMoveTool={onMoveTool}
         />
       )}
     </div>
@@ -120,11 +123,13 @@ function ClassCardExpanded({
   machines,
   tools,
   year,
+  onMoveTool,
 }: {
   cls: CapacityClass;
   machines: Machine[];
   tools: Tool[];
   year: number;
+  onMoveTool: (toolId: number, targetMachineId: number) => void;
 }) {
   // Filter machines belonging to this capacity class by tonnage bucket + capability flags.
   // NOTE: clamping_force_kn stores tons (legacy mis-named column) — use directly, no conversion.
@@ -146,7 +151,7 @@ function ClassCardExpanded({
       className="border-t border-[#ececea] px-6 pb-6"
       style={{ background: 'linear-gradient(180deg, #fbfbfa, #ffffff)' }}
     >
-      <StackedBarChart cells={cls.years} />
+      <StackedBarChart cells={cls.years} tools={tools} />
 
       {/* Per-machine drilldown table */}
       <div className="border-t border-[#ececea] mt-6">
@@ -174,6 +179,7 @@ function ClassCardExpanded({
               machine={m}
               tools={machineTools}
               utilPct={me * 100}
+              onDropTool={onMoveTool}
             />
           );
         })}

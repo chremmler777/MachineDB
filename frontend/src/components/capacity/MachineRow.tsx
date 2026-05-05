@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Machine, Tool } from '../../types/capacity';
 
 function utilFillColor(pct: number): string {
@@ -10,18 +11,36 @@ export function MachineRow({
   machine,
   tools,
   utilPct,
+  onDropTool,
 }: {
   machine: Machine;
   tools: Tool[];
   utilPct: number;
+  onDropTool: (toolId: number, targetMachineId: number) => void;
 }) {
+  const [dragOver, setDragOver] = useState(false);
+
   const buildYearShort =
     machine.year_of_construction != null
       ? `'${String(machine.year_of_construction).slice(2)}`
       : '—';
 
   return (
-    <div className="grid grid-cols-[220px_160px_1fr_180px] py-4 px-1 items-center border-b border-[#ececea] hover:bg-[#fafaf8] transition-colors">
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const rawId = e.dataTransfer.getData('application/x-tool-id');
+        if (rawId) onDropTool(Number(rawId), machine.id);
+      }}
+      className={`grid grid-cols-[220px_160px_1fr_180px] py-4 px-1 items-center border-b border-[#ececea] transition-colors ${
+        dragOver
+          ? 'bg-[#e6edf6] ring-1 ring-inset ring-[#2c5fa0]/30'
+          : 'hover:bg-[#fafaf8]'
+      }`}
+    >
       {/* Press name */}
       <div className="text-[13px] font-medium tracking-tight">
         {machine.internal_name}
@@ -34,27 +53,35 @@ export function MachineRow({
       </div>
 
       {/* Running tool chips */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1 flex-wrap items-center">
         {tools.length === 0 ? (
-          <span className="px-2.5 py-0.5 border border-dashed border-[#ececea] rounded-full text-[11px] text-[#8a8a8e]">
-            — available —
+          <span
+            className={`px-2.5 py-0.5 border border-dashed rounded-full text-[11px] transition-colors ${
+              dragOver
+                ? 'border-[#2c5fa0] text-[#2c5fa0]'
+                : 'border-[#ececea] text-[#8a8a8e]'
+            }`}
+          >
+            {dragOver ? 'drop tool here' : '— available —'}
           </span>
         ) : (
           tools.map((t) => (
             <span
               key={t.id}
               draggable
-              className="px-2.5 py-0.5 bg-[#f7f7f5] border border-[#ececea] rounded-full text-[11px] font-mono text-[#5a5a5e] cursor-grab hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors"
+              className="px-2.5 py-0.5 bg-[#f7f7f5] border border-[#ececea] rounded-full text-[11px] font-mono text-[#5a5a5e] cursor-grab hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors active:cursor-grabbing"
               onDragStart={(e) =>
-                e.dataTransfer.setData(
-                  'application/x-tool-id',
-                  String(t.id),
-                )
+                e.dataTransfer.setData('application/x-tool-id', String(t.id))
               }
             >
               {t.tool_number}
             </span>
           ))
+        )}
+        {tools.length > 0 && dragOver && (
+          <span className="px-2 py-0.5 border border-dashed border-[#2c5fa0] rounded-full text-[10px] text-[#2c5fa0] ml-1">
+            + drop here
+          </span>
         )}
       </div>
 
