@@ -91,6 +91,10 @@ export interface Machine {
   robot_air_circuits?: number;
   robot_electrical_signals?: number;
 
+  // Lifecycle
+  in_service_from?: string | null;     // 'YYYY-MM-DD'
+  planned_scrap_from?: string | null;  // 'YYYY-MM-DD'
+
   // Meta
   special_controls?: string;
   remarks?: string;

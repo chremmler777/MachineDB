@@ -63,6 +63,34 @@ const validateAndCoerce = (machine: any): any => {
   return machine;
 };
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function coerceLifecycleDates<T extends { in_service_from?: any; planned_scrap_from?: any }>(input: T): T {
+  for (const key of ['in_service_from', 'planned_scrap_from'] as const) {
+    if (!(key in input)) continue;
+    const v = (input as any)[key];
+    if (v === null || v === undefined) {
+      (input as any)[key] = v ?? undefined;
+      if (v === null) (input as any)[key] = null;
+      continue;
+    }
+    if (typeof v !== 'string' || v === '' || !ISO_DATE_RE.test(v) || isNaN(Date.parse(v))) {
+      (input as any)[key] = null;
+    }
+  }
+  return input;
+}
+
+export function lifecycleDateOrderError(
+  input: { in_service_from?: string | null; planned_scrap_from?: string | null },
+): string | null {
+  const a = input.in_service_from;
+  const b = input.planned_scrap_from;
+  if (!a || !b) return null;
+  if (b > a) return null; // ISO 'YYYY-MM-DD' is lex-orderable
+  return 'planned_scrap_from must be after in_service_from';
+}
+
 // List machines with search, filter, sort
 router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -209,6 +237,9 @@ router.post('/', verifyToken, requireMaster, async (req: AuthRequest, res: Respo
 
     // Validate and coerce field types
     data = validateAndCoerce(data);
+    data = coerceLifecycleDates(data);
+    const orderErr = lifecycleDateOrderError(data);
+    if (orderErr) return res.status(400).json({ error: orderErr });
 
     const columns = Object.keys(data).filter((key) => data[key as keyof Machine] !== undefined && data[key as keyof Machine] !== null);
     const values = columns.map((col) => {
@@ -243,7 +274,13 @@ router.post('/', verifyToken, requireMaster, async (req: AuthRequest, res: Respo
 router.put('/:id', verifyToken, requireMaster, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const data: Machine = req.body;
+    let data: Machine = req.body;
+
+    // Validate and coerce field types
+    data = validateAndCoerce(data);
+    data = coerceLifecycleDates(data);
+    const orderErr = lifecycleDateOrderError(data);
+    if (orderErr) return res.status(400).json({ error: orderErr });
 
     // Get previous data
     const previousResult = await pool.query('SELECT * FROM machines WHERE id = $1', [id]);
