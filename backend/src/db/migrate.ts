@@ -195,6 +195,41 @@ const migrations = [
        ELSE '3200T'
      END
      WHERE tonnage_class IS NULL`,
+
+  `CREATE TABLE IF NOT EXISTS im_tools (
+    id SERIAL PRIMARY KEY,
+    tool_number TEXT UNIQUE NOT NULL,
+    description TEXT,
+    customer TEXT,
+    program TEXT,
+
+    cavities INT,
+    rated_cycle_time_sec NUMERIC,
+    operator_fte NUMERIC,
+    raw_material_kg_per_piece NUMERIC,
+
+    qualified_min_tonnage_t INT,
+    qualified_max_tonnage_t INT,
+    shot_volume_required_cm3 NUMERIC,
+    requires_2k BOOLEAN DEFAULT FALSE,
+    requires_mucell BOOLEAN DEFAULT FALSE,
+    requires_variotherm BOOLEAN DEFAULT FALSE,
+
+    assigned_machine_id INT REFERENCES machines(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'active'
+      CHECK (status IN ('active','inactive','candidate')),
+
+    pdb_tool_ref TEXT,
+    process_sheet_file_id INT REFERENCES machine_files(id) ON DELETE SET NULL,
+    process_sheet_imported_at TIMESTAMP,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_edited_by TEXT
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_im_tools_assigned ON im_tools(assigned_machine_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_im_tools_status ON im_tools(status)`,
 ];
 
 async function runMigrations() {
