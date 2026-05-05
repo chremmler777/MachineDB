@@ -302,6 +302,11 @@ export function computeCapacity(input: {
     const yearCells: CapacityCell[] = [];
 
     for (let year = input.yearFrom; year <= input.yearTo; year++) {
+      const activeCount = machines.reduce(
+        (sum, mm) => sum + monthsActiveInYear(mm.in_service_from, mm.planned_scrap_from, year) / 12,
+        0,
+      );
+
       const cc = classCapacity.find(
         c =>
           c.tonnage_t === tonnage_t &&
@@ -317,8 +322,8 @@ export function computeCapacity(input: {
           year,
           hours_per_machine: 0,
           demand: 0,
-          available: machines.length,
-          free: machines.length,
+          available: activeCount,
+          free: activeCount,
           utilization_pct: 0,
           status: 'green',
           contributing_tools: [],
@@ -344,14 +349,14 @@ export function computeCapacity(input: {
         contributing.push({ tool_number: tool.tool_number, mach_equivalents: me });
       }
 
-      const free = machines.length - demand;
+      const free = activeCount - demand;
       yearCells.push({
         year,
         hours_per_machine,
         demand,
-        available: machines.length,
+        available: activeCount,
         free,
-        utilization_pct: machines.length > 0 ? (demand / machines.length) * 100 : 0,
+        utilization_pct: activeCount > 0 ? (demand / activeCount) * 100 : 0,
         status: statusFor(free),
         contributing_tools: contributing,
       });
