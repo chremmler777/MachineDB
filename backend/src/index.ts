@@ -7,6 +7,8 @@ import machinesRoutes from './routes/machines.js';
 import filesRoutes from './routes/files.js';
 import importRoutes from './routes/import.js';
 import v1MachinesRoutes from './routes/v1-machines.js';
+import v1CapacityRoutes from './routes/v1-capacity.js';
+import capacityRoutes from './routes/capacity.js';
 import imToolsRoutes from './routes/im-tools.js';
 import imToolVolumesRoutes from './routes/im-tool-volumes.js';
 import imClassCapacityRoutes from './routes/im-class-capacity.js';
@@ -42,11 +44,13 @@ app.get('/api/auth/me', ssoAuth, (req: any, res) => {
 
 // External service API (service-to-service bearer auth, for RFQ2/PLM2/etc)
 app.use('/v1', serviceAuth, v1MachinesRoutes);
+app.use('/v1/capacity', serviceAuth, v1CapacityRoutes);
 
 // Protected routes - require SSO authentication
 app.use('/api/machines', ssoAuth, machinesRoutes);
 app.use('/api/files', ssoAuth, filesRoutes);
 app.use('/api/import', ssoAuth, importRoutes);
+app.use('/api/capacity', ssoAuth, capacityRoutes);
 app.use('/api/im-tools', ssoAuth, imToolsRoutes);
 app.use('/api/im-tool-volumes', ssoAuth, imToolVolumesRoutes);
 app.use('/api/im-class-capacity', ssoAuth, imClassCapacityRoutes);
