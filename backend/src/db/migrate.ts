@@ -196,6 +196,20 @@ const migrations = [
        ELSE '3200T'
      END`,
 
+  // Machine lifecycle dates (Phase: machine-lifecycle)
+  `ALTER TABLE machines
+     ADD COLUMN IF NOT EXISTS in_service_from DATE,
+     ADD COLUMN IF NOT EXISTS planned_scrap_from DATE`,
+
+  `ALTER TABLE machines
+     DROP CONSTRAINT IF EXISTS machines_lifecycle_order_chk`,
+
+  `ALTER TABLE machines
+     ADD CONSTRAINT machines_lifecycle_order_chk
+       CHECK (planned_scrap_from IS NULL
+              OR in_service_from IS NULL
+              OR planned_scrap_from > in_service_from)`,
+
   `CREATE TABLE IF NOT EXISTS im_tools (
     id SERIAL PRIMARY KEY,
     tool_number TEXT UNIQUE NOT NULL,
