@@ -178,23 +178,23 @@ const migrations = [
      ADD COLUMN IF NOT EXISTS has_variotherm BOOLEAN DEFAULT FALSE,
      ADD COLUMN IF NOT EXISTS tonnage_class TEXT`,
 
-  // Backfill tonnage_class label from clamping_force_kn (kN → t bucket label)
+  // Backfill tonnage_class from clamping_force_kn.
+  // NOTE: column is named *_kn but actually stores tons (legacy mis-naming, rename deferred).
   `UPDATE machines SET tonnage_class =
      CASE
        WHEN clamping_force_kn IS NULL THEN NULL
-       WHEN clamping_force_kn / 9.80665 < 100  THEN '80T'
-       WHEN clamping_force_kn / 9.80665 < 250  THEN '200T'
-       WHEN clamping_force_kn / 9.80665 < 450  THEN '350T'
-       WHEN clamping_force_kn / 9.80665 < 600  THEN '550T'
-       WHEN clamping_force_kn / 9.80665 < 750  THEN '650T'
-       WHEN clamping_force_kn / 9.80665 < 950  THEN '900T'
-       WHEN clamping_force_kn / 9.80665 < 1150 THEN '1000T'
-       WHEN clamping_force_kn / 9.80665 < 1450 THEN '1300T'
-       WHEN clamping_force_kn / 9.80665 < 1950 THEN '1600T'
-       WHEN clamping_force_kn / 9.80665 < 2750 THEN '2300T'
+       WHEN clamping_force_kn < 100  THEN '80T'
+       WHEN clamping_force_kn < 250  THEN '200T'
+       WHEN clamping_force_kn < 450  THEN '350T'
+       WHEN clamping_force_kn < 600  THEN '550T'
+       WHEN clamping_force_kn < 750  THEN '650T'
+       WHEN clamping_force_kn < 950  THEN '900T'
+       WHEN clamping_force_kn < 1150 THEN '1000T'
+       WHEN clamping_force_kn < 1450 THEN '1300T'
+       WHEN clamping_force_kn < 1950 THEN '1600T'
+       WHEN clamping_force_kn < 2750 THEN '2300T'
        ELSE '3200T'
-     END
-     WHERE tonnage_class IS NULL`,
+     END`,
 
   `CREATE TABLE IF NOT EXISTS im_tools (
     id SERIAL PRIMARY KEY,
