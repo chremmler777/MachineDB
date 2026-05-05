@@ -7,6 +7,10 @@ import machinesRoutes from './routes/machines.js';
 import filesRoutes from './routes/files.js';
 import importRoutes from './routes/import.js';
 import v1MachinesRoutes from './routes/v1-machines.js';
+import imToolsRoutes from './routes/im-tools.js';
+import imToolVolumesRoutes from './routes/im-tool-volumes.js';
+import imClassCapacityRoutes from './routes/im-class-capacity.js';
+import imScenariosRoutes from './routes/im-scenarios.js';
 import { ssoAuth } from './middleware/sso-auth.js';
 import { serviceAuth } from './middleware/service-auth.js';
 
@@ -43,6 +47,10 @@ app.use('/v1', serviceAuth, v1MachinesRoutes);
 app.use('/api/machines', ssoAuth, machinesRoutes);
 app.use('/api/files', ssoAuth, filesRoutes);
 app.use('/api/import', ssoAuth, importRoutes);
+app.use('/api/im-tools', ssoAuth, imToolsRoutes);
+app.use('/api/im-tool-volumes', ssoAuth, imToolVolumesRoutes);
+app.use('/api/im-class-capacity', ssoAuth, imClassCapacityRoutes);
+app.use('/api/im-scenarios', ssoAuth, imScenariosRoutes);
 
 // Auth routes (disabled - use admin panel)
 app.use('/api/auth', authRoutes);
