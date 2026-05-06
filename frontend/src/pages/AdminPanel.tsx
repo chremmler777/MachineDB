@@ -43,7 +43,13 @@ const FORM_SECTIONS: SectionDef[] = [
   {
     titleKey: 'admin.sectionClampingUnit',
     fields: [
-      { key: 'clamping_force_kn', label: 'Clamping Force', type: 'number', unit: 't' },
+      { key: 'clamping_force_t', label: 'Clamping Force', type: 'number', unit: 't' },
+      { key: 'two_k_type', label: '2K Type', type: 'select', options: [
+        { value: '', label: '1K (single component)' },
+        { value: '2k_turntable', label: '2K — Turntable' },
+        { value: '2k_no_turntable', label: '2K — No turntable' },
+        { value: 'parallel_injection', label: 'Parallel injection' },
+      ] },
       { key: 'centering_ring_nozzle_mm', label: 'Centering Ring Nozzle', type: 'number', unit: 'mm' },
       { key: 'centering_ring_ejector_mm', label: 'Centering Ring Ejector', type: 'number', unit: 'mm' },
       { key: 'fine_centering', label: 'Fine Centering', type: 'boolean' },

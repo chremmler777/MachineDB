@@ -1,5 +1,7 @@
 export type CellStatus = 'green' | 'yellow' | 'orange' | 'red';
 
+export type TwoKType = '2k_turntable' | '2k_no_turntable' | 'parallel_injection';
+
 export type CapacityCell = {
   year: number;
   hours_per_machine: number;
@@ -63,9 +65,10 @@ export type Machine = {
   internal_name: string;
   manufacturer: string | null;
   year_of_construction: number | null;
-  clamping_force_kn: number | null;
+  clamping_force_t: number | null;
   iu1_shot_volume_cm3: number | null;
   is_2k: boolean;
+  two_k_type: TwoKType | null;
   has_mucell: boolean;
   has_variotherm: boolean;
 };

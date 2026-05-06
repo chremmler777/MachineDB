@@ -111,7 +111,12 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
     {
       title: 'Clamping Unit',
       rows: [
-        field('Clamping Force', 'clamping_force_kn', machine.clamping_force_kn, 't'),
+        field('Clamping Force', 'clamping_force_t', machine.clamping_force_t, 't'),
+        field('2K Type', 'two_k_type',
+          machine.two_k_type === '2k_turntable' ? '2K — Turntable' :
+          machine.two_k_type === '2k_no_turntable' ? '2K — No turntable' :
+          machine.two_k_type === 'parallel_injection' ? 'Parallel injection' :
+          '1K (single component)'),
         field('Centering Ring Nozzle', 'centering_ring_nozzle_mm', machine.centering_ring_nozzle_mm, 'mm'),
         field('Centering Ring Ejector', 'centering_ring_ejector_mm', machine.centering_ring_ejector_mm, 'mm'),
         field('Fine Centering', 'fine_centering', machine.fine_centering),
@@ -259,7 +264,7 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
           { label: 'Plant', value: machine.plant_location },
           { label: 'Order #', value: machine.order_number },
           { label: 'MuCell', value: machine.mucell ? 'Yes' : 'No' },
-          { label: 'Clamping Force', value: machine.clamping_force_kn ? `${machine.clamping_force_kn} t` : '-' },
+          { label: 'Clamping Force', value: machine.clamping_force_t ? `${machine.clamping_force_t} t` : '-' },
         ].map(({ label, value }) => (
           <div key={label}>
             <div style={{ fontSize: '10px', color: textSecondary, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '500' }}>{label}</div>

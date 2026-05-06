@@ -123,7 +123,7 @@ export const MachineSketch: React.FC<Props> = ({ machine, initialToolH, initialT
   const ejectorHole = num(machine.ejector_hole_diameter_mm);
   const tiebarDiaRaw = num(machine.tiebar_diameter_mm);
   // fallback estimate from clamping force (rough rule of thumb)
-  const cf = num(machine.clamping_force_kn);
+  const cf = num(machine.clamping_force_t);
   const tiebarDia = tiebarDiaRaw ?? (cf ? Math.round(Math.max(40, Math.sqrt(cf) * 6)) : 60);
 
   const [toolH, setToolH] = useState<string>(initialToolH ? String(initialToolH) : '');
