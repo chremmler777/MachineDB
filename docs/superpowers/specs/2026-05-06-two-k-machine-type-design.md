@@ -83,7 +83,7 @@ classification (e.g. `KM 350-1/-2/-3` are 1K despite being adjacent to the 2K
 |---|---|---|
 | MX Arburg Allrounder 220T | `M01, M02, M03, M04, M12, M13, M14, M23` | `2k_no_turntable` |
 | US KM 350/550/1300/1600 with 2 IU | `KM 350-4, KM 550-1, KM 550-2, KM 1300-1, KM 1300-2, KM 1300-3, KM 1600-1, KM 1600-2` | `2k_no_turntable` |
-| MX Sumitomo 280 + Nissei DCX600/800 | `M27, M08, M19` | `parallel_injection` |
+| MX Sumitomo 280 + Nissei DCX600/800 | `M27, M8, M19` | `parallel_injection` |
 | US KM 1000T | `KM 1000-1, KM 1000-2, KM 1000-3` | `2k_turntable` |
 
 Total: 22 machines. Machines outside these cohorts are left `NULL` and edited

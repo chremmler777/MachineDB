@@ -123,7 +123,7 @@ describe('two_k_type migration', () => {
   it('backfills MX Sumitomo 280 + Nissei DCX600/800 to parallel_injection', async () => {
     const res = await pool.query(`
       SELECT internal_name, two_k_type FROM machines
-      WHERE internal_name IN ('M27','M08','M19') ORDER BY internal_name`);
+      WHERE internal_name IN ('M27','M8','M19') ORDER BY internal_name`);
     expect(res.rows.length).toBe(3);
     for (const row of res.rows) {
       expect(row.two_k_type).toBe('parallel_injection');
@@ -199,7 +199,7 @@ Append after the existing lifecycle migration (last entry in the migrations arra
   `UPDATE machines SET two_k_type='2k_no_turntable'
      WHERE internal_name IN ('KM 350-4','KM 550-1','KM 550-2','KM 1300-1','KM 1300-2','KM 1300-3','KM 1600-1','KM 1600-2')`,
   `UPDATE machines SET two_k_type='parallel_injection'
-     WHERE internal_name IN ('M27','M08','M19')`,
+     WHERE internal_name IN ('M27','M8','M19')`,
   `UPDATE machines SET two_k_type='2k_turntable'
      WHERE internal_name IN ('KM 1000-1','KM 1000-2','KM 1000-3')`,
 
@@ -350,7 +350,7 @@ describe('GET /v1/machines two_k_type', () => {
       expect(m.two_k_type).toBe('parallel_injection');
     }
     const names = res.body.machines.map((m: { internal_name: string }) => m.internal_name).sort();
-    expect(names).toEqual(['M08','M19','M27']);
+    expect(names).toEqual(['M27','M8','M19']);
   });
 
   it('filters by two_k_type=null (1K only)', async () => {
