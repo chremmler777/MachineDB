@@ -593,7 +593,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                         cursor: 'pointer',
                         userSelect: 'none',
                         whiteSpace: 'nowrap',
-                        ...(col.key === 'internal_name' ? { minWidth: '180px' } : {}),
+                        ...(col.key === 'internal_name' ? { minWidth: '260px' } : {}),
                         ...(colIdx === 0 ? { position: 'sticky', left: 0, zIndex: 4 } : {})
                       }}
                     >
@@ -627,8 +627,8 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                           borderBottom: `1px solid ${borderColor}`,
                           borderRight: `1px solid ${borderColor}`,
                           textAlign: col.key.includes('_mm') || col.key.includes('_kg') || col.key.includes('_cm') || col.key.includes('_bar') || col.key === 'clamping_force_t' || col.key.includes('_gs') ? 'right' : 'left',
-                          maxWidth: col.key === 'internal_name' ? '220px' : '150px',
-                          minWidth: col.key === 'internal_name' ? '180px' : undefined,
+                          maxWidth: col.key === 'internal_name' ? '300px' : '150px',
+                          minWidth: col.key === 'internal_name' ? '260px' : undefined,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           fontSize: '11px',
@@ -646,29 +646,34 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                             <LifecycleBadge inServiceFrom={m.in_service_from} plannedScrapFrom={m.planned_scrap_from} />
                             {m.two_k_type && (
                               <span
-                                title={m.two_k_type}
+                                title={
+                                  m.two_k_type === '2k_turntable' ? '2K with turntable (rotating platen)' :
+                                  m.two_k_type === '2k_no_turntable' ? '2K without turntable (index plate / sliding tool / core-back)' :
+                                  '2K parallel injection (two separate tools sharing two injection units)'
+                                }
                                 style={{
                                   flex: '0 0 auto',
-                                  padding: '1px 5px',
-                                  fontSize: '9px',
+                                  padding: '2px 7px',
+                                  fontSize: '10px',
                                   fontWeight: 700,
-                                  borderRadius: '3px',
+                                  borderRadius: '4px',
                                   border: '1px solid',
                                   borderColor:
                                     m.two_k_type === '2k_turntable' ? '#7c3aed' :
                                     m.two_k_type === '2k_no_turntable' ? '#2563eb' :
                                     '#0891b2',
-                                  color:
+                                  color: '#ffffff',
+                                  backgroundColor:
                                     m.two_k_type === '2k_turntable' ? '#7c3aed' :
                                     m.two_k_type === '2k_no_turntable' ? '#2563eb' :
                                     '#0891b2',
-                                  backgroundColor: 'transparent',
                                   whiteSpace: 'nowrap',
+                                  letterSpacing: '0.3px',
                                 }}
                               >
-                                {m.two_k_type === '2k_turntable' ? '2K-T' :
-                                 m.two_k_type === '2k_no_turntable' ? '2K' :
-                                 'Parallel'}
+                                {m.two_k_type === '2k_turntable' ? '2K Turntable' :
+                                 m.two_k_type === '2k_no_turntable' ? '2K Index' :
+                                 '2K Parallel'}
                               </span>
                             )}
                             {m.wam_file_id && (
