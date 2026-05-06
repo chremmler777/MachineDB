@@ -178,23 +178,30 @@ const migrations = [
      ADD COLUMN IF NOT EXISTS has_variotherm BOOLEAN DEFAULT FALSE,
      ADD COLUMN IF NOT EXISTS tonnage_class TEXT`,
 
-  // Backfill tonnage_class from clamping_force_kn.
-  // NOTE: column is named *_kn but actually stores tons (legacy mis-naming, rename deferred).
-  `UPDATE machines SET tonnage_class =
-     CASE
-       WHEN clamping_force_kn IS NULL THEN NULL
-       WHEN clamping_force_kn < 100  THEN '80T'
-       WHEN clamping_force_kn < 250  THEN '200T'
-       WHEN clamping_force_kn < 450  THEN '350T'
-       WHEN clamping_force_kn < 600  THEN '550T'
-       WHEN clamping_force_kn < 750  THEN '650T'
-       WHEN clamping_force_kn < 950  THEN '900T'
-       WHEN clamping_force_kn < 1150 THEN '1000T'
-       WHEN clamping_force_kn < 1450 THEN '1300T'
-       WHEN clamping_force_kn < 1950 THEN '1600T'
-       WHEN clamping_force_kn < 2750 THEN '2300T'
-       ELSE '3200T'
-     END`,
+  // Backfill tonnage_class from clamping_force_kn (legacy name; later renamed to clamping_force_t).
+  // Wrapped in DO block so the rename later in this array doesn't break re-runs of migrate.ts:
+  // only runs if the legacy column still exists (i.e. on a fresh DB before the rename).
+  `DO $$
+   BEGIN
+     IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_name='machines' AND column_name='clamping_force_kn') THEN
+       UPDATE machines SET tonnage_class =
+         CASE
+           WHEN clamping_force_kn IS NULL THEN NULL
+           WHEN clamping_force_kn < 100  THEN '80T'
+           WHEN clamping_force_kn < 250  THEN '200T'
+           WHEN clamping_force_kn < 450  THEN '350T'
+           WHEN clamping_force_kn < 600  THEN '550T'
+           WHEN clamping_force_kn < 750  THEN '650T'
+           WHEN clamping_force_kn < 950  THEN '900T'
+           WHEN clamping_force_kn < 1150 THEN '1000T'
+           WHEN clamping_force_kn < 1450 THEN '1300T'
+           WHEN clamping_force_kn < 1950 THEN '1600T'
+           WHEN clamping_force_kn < 2750 THEN '2300T'
+           ELSE '3200T'
+         END;
+     END IF;
+   END $$`,
 
   // Machine lifecycle dates (Phase: machine-lifecycle)
   `ALTER TABLE machines
@@ -278,9 +285,36 @@ const migrations = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
+
+  // Two-K machine type identifier
+  `ALTER TABLE machines
+     ADD COLUMN IF NOT EXISTS two_k_type TEXT
+     CHECK (two_k_type IN ('2k_turntable','2k_no_turntable','parallel_injection'))`,
+
+  `CREATE INDEX IF NOT EXISTS idx_machines_two_k_type
+     ON machines(two_k_type) WHERE two_k_type IS NOT NULL`,
+
+  `UPDATE machines SET two_k_type='2k_no_turntable'
+     WHERE internal_name IN ('M01','M02','M03','M04','M12','M13','M14','M23')`,
+  `UPDATE machines SET two_k_type='2k_no_turntable'
+     WHERE internal_name IN ('KM 350-4','KM 550-1','KM 550-2','KM 1300-1','KM 1300-2','KM 1300-3','KM 1600-1','KM 1600-2')`,
+  `UPDATE machines SET two_k_type='parallel_injection'
+     WHERE internal_name IN ('M27','M08','M19')`,
+  `UPDATE machines SET two_k_type='2k_turntable'
+     WHERE internal_name IN ('KM 1000-1','KM 1000-2','KM 1000-3')`,
+
+  `UPDATE machines SET is_2k = (two_k_type IS NOT NULL)`,
+
+  `DO $$
+   BEGIN
+     IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_name='machines' AND column_name='clamping_force_kn') THEN
+       ALTER TABLE machines RENAME COLUMN clamping_force_kn TO clamping_force_t;
+     END IF;
+   END $$`,
 ];
 
-async function runMigrations() {
+export async function runMigrations() {
   const client = await pool.connect();
   try {
     for (const migration of migrations) {
@@ -319,8 +353,25 @@ async function runMigrations() {
     throw error;
   } finally {
     client.release();
-    await pool.end();
   }
 }
 
-runMigrations().catch(console.error);
+// Only auto-run + close the pool when invoked directly (e.g. `tsx src/db/migrate.ts`).
+// Importing this module (e.g. from tests) gets you the named export without side effects.
+const isMain = (() => {
+  try {
+    const entry = process.argv[1] && new URL(`file://${process.argv[1]}`).href;
+    return entry === import.meta.url;
+  } catch {
+    return false;
+  }
+})();
+
+if (isMain) {
+  runMigrations()
+    .catch((err) => {
+      console.error(err);
+      process.exitCode = 1;
+    })
+    .finally(() => pool.end());
+}
