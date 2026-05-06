@@ -298,8 +298,11 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     if (vol2Max) filtered = filtered.filter((m: any) => toNum(m.iu2_shot_volume_cm3) <= toNum(vol2Max));
     if (muCell === 'yes') filtered = filtered.filter((m: any) => m.mucell === true);
     if (muCell === 'no') filtered = filtered.filter((m: any) => !m.mucell);
-    if (twoShot === 'yes') filtered = filtered.filter((m: any) => m.iu2_screw_diameter_mm);
-    if (twoShot === 'no') filtered = filtered.filter((m: any) => !m.iu2_screw_diameter_mm);
+    if (twoShot === '1k') filtered = filtered.filter((m: any) => !m.two_k_type);
+    else if (twoShot === 'any2k') filtered = filtered.filter((m: any) => !!m.two_k_type);
+    else if (twoShot === '2k_turntable' || twoShot === '2k_no_turntable' || twoShot === 'parallel_injection') {
+      filtered = filtered.filter((m: any) => m.two_k_type === twoShot);
+    }
     if (hasRobot === 'yes') filtered = filtered.filter((m: any) => m.robot_manufacturer);
     if (hasRobot === 'no') filtered = filtered.filter((m: any) => !m.robot_manufacturer);
     if (rotaryTable === 'yes') filtered = filtered.filter((m: any) => m.rotary_table === true || m.rotary_table === 'Yes');
@@ -375,9 +378,12 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                 </select>
                 <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
                   style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
-                  <option value="">{t('filter.twoShotAll')}</option>
-                  <option value="yes">{t('filter.twoShotYes')}</option>
-                  <option value="no">{t('filter.twoShotNo')}</option>
+                  <option value="">All</option>
+                  <option value="1k">1K only</option>
+                  <option value="any2k">Any 2K</option>
+                  <option value="2k_turntable">2K — Turntable</option>
+                  <option value="2k_no_turntable">2K — No turntable</option>
+                  <option value="parallel_injection">Parallel injection</option>
                 </select>
               </div>
             </div>
