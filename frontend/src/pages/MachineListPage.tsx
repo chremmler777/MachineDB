@@ -593,6 +593,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                         cursor: 'pointer',
                         userSelect: 'none',
                         whiteSpace: 'nowrap',
+                        ...(col.key === 'internal_name' ? { minWidth: '180px' } : {}),
                         ...(colIdx === 0 ? { position: 'sticky', left: 0, zIndex: 4 } : {})
                       }}
                     >
@@ -626,7 +627,8 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                           borderBottom: `1px solid ${borderColor}`,
                           borderRight: `1px solid ${borderColor}`,
                           textAlign: col.key.includes('_mm') || col.key.includes('_kg') || col.key.includes('_cm') || col.key.includes('_bar') || col.key === 'clamping_force_t' || col.key.includes('_gs') ? 'right' : 'left',
-                          maxWidth: '150px',
+                          maxWidth: col.key === 'internal_name' ? '220px' : '150px',
+                          minWidth: col.key === 'internal_name' ? '180px' : undefined,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           fontSize: '11px',
