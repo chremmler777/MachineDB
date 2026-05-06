@@ -42,7 +42,7 @@ const COLUMN_GROUPS = [
     group: 'col.group.clampingUnit',
     color: 'rgba(255, 255, 153, 1)', // Soft Yellow
     columns: [
-      { key: 'clamping_force_kn', label: 'col.clampingForce' },
+      { key: 'clamping_force_t', label: 'col.clampingForce' },
       { key: 'centering_ring_nozzle_mm', label: 'col.centerNozzle' },
       { key: 'centering_ring_ejector_mm', label: 'col.centerEjector' },
       { key: 'fine_centering', label: 'col.fineCentering' },
@@ -171,7 +171,7 @@ const getHeaderColor = (color: string): string => {
 const formatValue = (value: any, key: string): string => {
   if (value === null || value === undefined) return '-';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (key === 'clamping_force_kn' && value) return `${Math.round(toNum(value))}`;
+  if (key === 'clamping_force_t' && value) return `${Math.round(toNum(value))}`;
   if (typeof value === 'number') return value.toString();
   return String(value);
 };
@@ -270,7 +270,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     .map(Number).sort((a, b) => a - b);
   const screw2Diameters = [...new Set(allMachines.map((m: any) => m.iu2_screw_diameter_mm).filter(Boolean))]
     .map(Number).sort((a, b) => a - b);
-  const clampingValues = [...new Set(allMachines.map((m: any) => m.clamping_force_kn).filter(Boolean))]
+  const clampingValues = [...new Set(allMachines.map((m: any) => m.clamping_force_t).filter(Boolean))]
     .map(Number).sort((a, b) => a - b);
   const vol1Values = [...new Set(allMachines.map((m: any) => m.iu1_shot_volume_cm3).filter(Boolean))].map(Number).sort((a, b) => a - b);
   const vol2Values = [...new Set(allMachines.map((m: any) => m.iu2_shot_volume_cm3).filter(Boolean))].map(Number).sort((a, b) => a - b);
@@ -286,8 +286,8 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
     }
     if (plant) filtered = filtered.filter((m: any) => m.plant_location === plant);
     if (manufacturer) filtered = filtered.filter((m: any) => m.manufacturer === manufacturer);
-    if (clampingMin) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) >= toNum(clampingMin));
-    if (clampingMax) filtered = filtered.filter((m: any) => toNum(m.clamping_force_kn) <= toNum(clampingMax));
+    if (clampingMin) filtered = filtered.filter((m: any) => toNum(m.clamping_force_t) >= toNum(clampingMin));
+    if (clampingMax) filtered = filtered.filter((m: any) => toNum(m.clamping_force_t) <= toNum(clampingMax));
     if (screwMin) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) >= toNum(screwMin));
     if (screwMax) filtered = filtered.filter((m: any) => toNum(m.iu1_screw_diameter_mm) <= toNum(screwMax));
     if (screw2Min) filtered = filtered.filter((m: any) => toNum(m.iu2_screw_diameter_mm) >= toNum(screw2Min));
@@ -636,6 +636,33 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                               {isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}
                             </span>
                             <LifecycleBadge inServiceFrom={m.in_service_from} plannedScrapFrom={m.planned_scrap_from} />
+                            {m.two_k_type && (
+                              <span
+                                title={m.two_k_type}
+                                style={{
+                                  flex: '0 0 auto',
+                                  padding: '1px 5px',
+                                  fontSize: '9px',
+                                  fontWeight: 700,
+                                  borderRadius: '3px',
+                                  border: '1px solid',
+                                  borderColor:
+                                    m.two_k_type === '2k_turntable' ? '#7c3aed' :
+                                    m.two_k_type === '2k_no_turntable' ? '#2563eb' :
+                                    '#0891b2',
+                                  color:
+                                    m.two_k_type === '2k_turntable' ? '#7c3aed' :
+                                    m.two_k_type === '2k_no_turntable' ? '#2563eb' :
+                                    '#0891b2',
+                                  backgroundColor: 'transparent',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {m.two_k_type === '2k_turntable' ? '2K-T' :
+                                 m.two_k_type === '2k_no_turntable' ? '2K' :
+                                 'Parallel'}
+                              </span>
+                            )}
                             {m.wam_file_id && (
                               <button
                                 onClick={e => handleWamView(m.wam_file_id, m.wam_file_name, e)}
