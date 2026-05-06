@@ -619,7 +619,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                           padding: '6px 4px',
                           borderBottom: `1px solid ${borderColor}`,
                           borderRight: `1px solid ${borderColor}`,
-                          textAlign: col.key.includes('_mm') || col.key.includes('_kg') || col.key.includes('_cm') || col.key.includes('_bar') || col.key.includes('_kn') || col.key.includes('_gs') ? 'right' : 'left',
+                          textAlign: col.key.includes('_mm') || col.key.includes('_kg') || col.key.includes('_cm') || col.key.includes('_bar') || col.key === 'clamping_force_t' || col.key.includes('_gs') ? 'right' : 'left',
                           maxWidth: '150px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
