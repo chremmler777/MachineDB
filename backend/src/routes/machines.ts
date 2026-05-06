@@ -7,7 +7,7 @@ const router = Router();
 
 // Define field types for validation
 const numericFields = new Set([
-  'year_of_construction', 'length_mm', 'width_mm', 'height_mm', 'weight_kg', 'clamping_force_kn',
+  'year_of_construction', 'length_mm', 'width_mm', 'height_mm', 'weight_kg', 'clamping_force_t',
   'centering_ring_nozzle_mm', 'centering_ring_ejector_mm', 'mold_height_min_mm', 'mold_height_max_mm',
   'opening_stroke_mm', 'clearance_horizontal_mm', 'clearance_vertical_mm',
   'max_weight_nozzle_kg', 'max_weight_ejector_kg', 'temperature_control_circuits', 'cascade_count',
@@ -23,6 +23,22 @@ const booleanFields = new Set([
   'fine_centering', 'rotary_table', 'hot_runner_integrated', 'hot_runner_external',
   'pneumatic_nozzle', 'pneumatic_ejector'
 ]);
+
+// Allowed two_k_type values (matches DB CHECK constraint). NULL = 1K machine.
+const VALID_TWO_K_TYPES = new Set(['2k_turntable', '2k_no_turntable', 'parallel_injection']);
+
+export function validateTwoKType(input: any): string | null {
+  if (!('two_k_type' in input)) return null;
+  const v = input.two_k_type;
+  if (v === null || v === undefined || v === '') {
+    input.two_k_type = null;
+    return null;
+  }
+  if (typeof v !== 'string' || !VALID_TWO_K_TYPES.has(v)) {
+    return 'invalid two_k_type';
+  }
+  return null;
+}
 
 // Validate and coerce field types
 const validateAndCoerce = (machine: any): any => {
@@ -122,13 +138,13 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
     }
 
     if (clamping_force_min) {
-      query += ` AND m.clamping_force_kn >= $${paramIndex}`;
+      query += ` AND m.clamping_force_t >= $${paramIndex}`;
       params.push(parseFloat(clamping_force_min as string));
       paramIndex++;
     }
 
     if (clamping_force_max) {
-      query += ` AND m.clamping_force_kn <= $${paramIndex}`;
+      query += ` AND m.clamping_force_t <= $${paramIndex}`;
       params.push(parseFloat(clamping_force_max as string));
       paramIndex++;
     }
@@ -175,13 +191,13 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
     }
 
     if (clamping_force_min) {
-      countQuery += ` AND clamping_force_kn >= $${countParamIndex}`;
+      countQuery += ` AND clamping_force_t >= $${countParamIndex}`;
       countParams.push(parseFloat(clamping_force_min as string));
       countParamIndex++;
     }
 
     if (clamping_force_max) {
-      countQuery += ` AND clamping_force_kn <= $${countParamIndex}`;
+      countQuery += ` AND clamping_force_t <= $${countParamIndex}`;
       countParams.push(parseFloat(clamping_force_max as string));
       countParamIndex++;
     }
@@ -240,6 +256,11 @@ router.post('/', verifyToken, requireMaster, async (req: AuthRequest, res: Respo
     data = coerceLifecycleDates(data);
     const orderErr = lifecycleDateOrderError(data);
     if (orderErr) return res.status(400).json({ error: orderErr });
+    const twoKErr = validateTwoKType(data);
+    if (twoKErr) return res.status(400).json({ error: twoKErr });
+    if ('two_k_type' in (data as any)) {
+      (data as any).is_2k = (data as any).two_k_type !== null;
+    }
 
     const columns = Object.keys(data).filter((key) => data[key as keyof Machine] !== undefined && data[key as keyof Machine] !== null);
     const values = columns.map((col) => {
@@ -281,6 +302,11 @@ router.put('/:id', verifyToken, requireMaster, async (req: AuthRequest, res: Res
     data = coerceLifecycleDates(data);
     const orderErr = lifecycleDateOrderError(data);
     if (orderErr) return res.status(400).json({ error: orderErr });
+    const twoKErr = validateTwoKType(data);
+    if (twoKErr) return res.status(400).json({ error: twoKErr });
+    if ('two_k_type' in (data as any)) {
+      (data as any).is_2k = (data as any).two_k_type !== null;
+    }
 
     // Get previous data
     const previousResult = await pool.query('SELECT * FROM machines WHERE id = $1', [id]);
@@ -565,8 +591,8 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
       const gaps: string[] = [];
       let matchScore = 100;
 
-      if (requirements.clamping_force_t && machine.clamping_force_kn) {
-        const diff = requirements.clamping_force_t - machine.clamping_force_kn;
+      if (requirements.clamping_force_t && machine.clamping_force_t) {
+        const diff = requirements.clamping_force_t - machine.clamping_force_t;
         if (diff > 0) {
           matchScore -= Math.min(50, diff);
           gaps.push(`gap.clampingForce:${diff.toFixed(0)}`);
@@ -645,8 +671,8 @@ router.post('/finder/search', verifyToken, async (req: AuthRequest, res: Respons
       if (aSuit !== bSuit) return aSuit - bSuit;
 
       if (requirements.clamping_force_t) {
-        const aForce = a.clamping_force_kn ?? Infinity;
-        const bForce = b.clamping_force_kn ?? Infinity;
+        const aForce = a.clamping_force_t ?? Infinity;
+        const bForce = b.clamping_force_t ?? Infinity;
         const aDiff = Math.abs(aForce - requirements.clamping_force_t);
         const bDiff = Math.abs(bForce - requirements.clamping_force_t);
         if (Math.abs(aDiff - bDiff) > 1) return aDiff - bDiff;
