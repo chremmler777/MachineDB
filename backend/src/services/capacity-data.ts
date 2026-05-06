@@ -25,7 +25,7 @@ export async function loadCapacityInputs(
   const [machinesResult, toolsResult, volumesResult, classCapResult] = await Promise.all([
     pool.query(
       `SELECT id,
-              clamping_force_kn,
+              clamping_force_t,
               iu1_shot_volume_cm3,
               COALESCE(is_2k, false) AS is_2k,
               COALESCE(has_mucell, false) AS has_mucell,
@@ -62,7 +62,7 @@ export async function loadCapacityInputs(
 
   const machines: MachineRow[] = machinesResult.rows.map(r => ({
     id: Number(r.id),
-    clamping_force_kn: r.clamping_force_kn != null ? Number(r.clamping_force_kn) : null,
+    clamping_force_t: r.clamping_force_t != null ? Number(r.clamping_force_t) : null,
     iu1_shot_volume_cm3: r.iu1_shot_volume_cm3 != null ? Number(r.iu1_shot_volume_cm3) : null,
     is_2k: Boolean(r.is_2k),
     has_mucell: Boolean(r.has_mucell),

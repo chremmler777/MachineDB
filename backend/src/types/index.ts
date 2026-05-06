@@ -7,6 +7,8 @@ export interface User {
   updated_at: Date;
 }
 
+export type TwoKType = '2k_turntable' | '2k_no_turntable' | 'parallel_injection';
+
 export interface Machine {
   id: number;
   internal_name: string;
@@ -24,7 +26,8 @@ export interface Machine {
   weight_kg?: number;
 
   // Clamping Unit
-  clamping_force_kn?: number;
+  clamping_force_t?: number;
+  two_k_type: TwoKType | null;
   centering_ring_nozzle_mm?: number;
   centering_ring_ejector_mm?: number;
   fine_centering?: boolean;

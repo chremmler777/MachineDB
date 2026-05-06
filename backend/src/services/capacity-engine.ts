@@ -1,12 +1,12 @@
 // Capacity engine — pure functions, no DB access.
 // All inputs are passed in; the route layer is responsible for fetching data.
 //
-// Note: machines.clamping_force_kn historically stores tons (legacy column name).
+// Note: machines.clamping_force_t historically stores tons (legacy column name).
 // Treat the field as tons directly; no kN→t conversion is performed.
 
 export type MachineRow = {
   id: number;
-  clamping_force_kn: number | null;  // value is in tons despite the name
+  clamping_force_t: number | null;  // value is in tons despite the name
   iu1_shot_volume_cm3: number | null;
   is_2k: boolean;
   has_mucell: boolean;
@@ -60,7 +60,7 @@ export function monthsActiveInYear(
 }
 
 export function qualifies(m: MachineRow, t: ToolQualification): QualResult {
-  const tonnage_t = m.clamping_force_kn;
+  const tonnage_t = m.clamping_force_t;
 
   if (t.qualified_min_tonnage_t != null && (tonnage_t == null || tonnage_t < t.qualified_min_tonnage_t))
     return { ok: false, reason: `Machine tonnage ${tonnage_t ?? '?'}t < required min ${t.qualified_min_tonnage_t}t` };
@@ -150,9 +150,9 @@ export type CapacityClass = {
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 // Machine class key: groups machines that share identical capability profile.
-// tonnage_t comes from clamping_force_kn directly (already in tons).
+// tonnage_t comes from clamping_force_t directly (already in tons).
 function classKey(m: MachineRow): string {
-  const t = m.clamping_force_kn ?? 'null';
+  const t = m.clamping_force_t ?? 'null';
   return `${t}-${m.is_2k}-${m.has_mucell}-${m.has_variotherm}`;
 }
 
@@ -277,7 +277,7 @@ export function computeCapacity(input: {
   for (const [key, machines] of machinesByKey) {
     // Decode the key back to capability dimensions.
     const firstM = machines[0];
-    const tonnage_t = firstM.clamping_force_kn!;
+    const tonnage_t = firstM.clamping_force_t!;
     const requires_2k = firstM.is_2k;
     const requires_mucell = firstM.has_mucell;
     const requires_variotherm = firstM.has_variotherm;

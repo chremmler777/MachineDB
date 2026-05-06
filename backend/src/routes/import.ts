@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Define field types for validation
 const numericFields = new Set([
-  'year_of_construction', 'length_mm', 'width_mm', 'height_mm', 'weight_kg', 'clamping_force_kn',
+  'year_of_construction', 'length_mm', 'width_mm', 'height_mm', 'weight_kg', 'clamping_force_t',
   'centering_ring_nozzle_mm', 'centering_ring_ejector_mm', 'mold_height_min_mm', 'mold_height_max_mm',
   'opening_stroke_mm', 'clearance_horizontal_mm', 'clearance_vertical_mm',
   'max_weight_nozzle_kg', 'max_weight_ejector_kg', 'temperature_control_circuits', 'cascade_count',
@@ -209,9 +209,9 @@ router.post('/excel', verifyToken, requireMaster, upload.single('file'), async (
         machine.robot_vacuum_circuits = parseValue(row[61]);
         machine.remarks = parseValue(row[62]);
       } else if (plant_location === 'Mexico') {
-        // Mexico file column mapping
-        // Col 0: internal_name, Col 1: manufacturer, Col 2: order, Col 3: model, Col 4: serial
-        // Col 5: year, Col 6-8: length/width/height, Col 9: weight, Col 10: clamping_force
+        // Mexico file column mapping (KTX Mexico sheet, 0-based row indices = Excel column - 1)
+        // Excel cols 23-24 (Thread: nozzle/ejector side) have no DB column and are intentionally skipped.
+        // No source columns for shot_weight or mechanical/electrical interfaces — left null.
         machine.manufacturer = parseValue(row[1]) || null;
         machine.order_number = parseValue(row[2]) || null;
         machine.model = parseValue(row[3]) || null;
@@ -221,7 +221,7 @@ router.post('/excel', verifyToken, requireMaster, upload.single('file'), async (
         machine.width_mm = parseValue(row[7]);
         machine.height_mm = parseValue(row[8]);
         machine.weight_kg = parseValue(row[9]);
-        machine.clamping_force_kn = parseValue(row[10]);
+        machine.clamping_force_t = parseValue(row[10]);
         machine.centering_ring_nozzle_mm = parseValue(row[11]);
         machine.centering_ring_ejector_mm = parseValue(row[12]);
         machine.fine_centering = parseValue(row[13]);
@@ -233,47 +233,42 @@ router.post('/excel', verifyToken, requireMaster, upload.single('file'), async (
         machine.rotary_table = parseValue(row[19]);
         machine.max_weight_nozzle_kg = parseValue(row[20]);
         machine.max_weight_ejector_kg = parseValue(row[21]);
-        machine.temperature_control_circuits = parseValue(row[22]);
-        machine.hot_runner_integrated = parseValue(row[23]);
-        machine.hot_runner_external = parseValue(row[24]);
+        // row[22], row[23] = Thread nozzle/ejector — skipped, no DB column
+        machine.temperature_control_circuits = parseValue(row[24]);
         machine.cascade_count = parseValue(row[25]);
-        machine.core_pulls_nozzle = parseValue(row[26]);
-        machine.core_pulls_ejector = parseValue(row[27]);
-        machine.pneumatic_nozzle = parseValue(row[28]);
-        machine.pneumatic_ejector = parseValue(row[29]);
-        machine.ejector_stroke_mm = parseValue(row[30]);
-        machine.ejector_thread = parseValue(row[31]);
-        machine.ejector_max_travel_mm = parseValue(row[32]);
-        machine.mechanical_interface_tool = parseValue(row[33]);
-        machine.mechanical_interface_robot = parseValue(row[34]);
-        machine.electrical_interface_tool = parseValue(row[35]);
-        machine.electrical_interface_hotrunner = parseValue(row[36]);
-        machine.electrical_interface_ejector = parseValue(row[37]);
-        machine.electrical_interface_corepull = parseValue(row[38]);
-        machine.electrical_interface_robot = parseValue(row[39]);
-        machine.iu1_screw_diameter_mm = parseValue(row[40]);
-        machine.iu1_shot_volume_cm3 = parseValue(row[41]);
-        machine.iu1_injection_flow_cm3s = parseValue(row[42]);
-        machine.iu1_plasticizing_rate_gs = parseValue(row[43]);
-        machine.iu1_ld_ratio = parseValue(row[44]);
-        machine.iu1_injection_pressure_bar = parseValue(row[45]);
-        machine.iu1_shot_weight_g = parseValue(row[46]);
-        machine.iu1_screw_type = parseValue(row[47]);
-        machine.iu1_nozzle = parseValue(row[48]);
-        machine.iu2_screw_diameter_mm = parseValue(row[49]);
-        machine.iu2_shot_volume_cm3 = parseValue(row[50]);
-        machine.iu2_injection_flow_cm3s = parseValue(row[51]);
-        machine.iu2_plasticizing_rate_gs = parseValue(row[52]);
-        machine.iu2_ld_ratio = parseValue(row[53]);
-        machine.iu2_injection_pressure_bar = parseValue(row[54]);
-        machine.iu2_shot_weight_g = parseValue(row[55]);
-        machine.iu2_screw_type = parseValue(row[56]);
-        machine.iu2_nozzle = parseValue(row[57]);
-        machine.robot_manufacturer = parseValue(row[58]);
-        machine.robot_model = parseValue(row[59]);
-        machine.robot_serial = parseValue(row[60]);
-        machine.robot_vacuum_circuits = parseValue(row[61]);
-        machine.remarks = parseValue(row[62]);
+        machine.hot_runner_integrated = parseValue(row[26]);
+        machine.hot_runner_external = parseValue(row[27]);
+        machine.core_pulls_nozzle = parseValue(row[28]);
+        machine.core_pulls_ejector = parseValue(row[29]);
+        machine.pneumatic_nozzle = parseValue(row[30]);
+        machine.pneumatic_ejector = parseValue(row[31]);
+        machine.ejector_stroke_mm = parseValue(row[32]);
+        machine.ejector_thread = parseValue(row[33]);
+        machine.ejector_max_travel_mm = parseValue(row[34]);
+        machine.special_controls = parseValue(row[35]);
+        machine.iu1_screw_diameter_mm = parseValue(row[36]);
+        machine.iu1_shot_volume_cm3 = parseValue(row[37]);
+        machine.iu1_injection_flow_cm3s = parseValue(row[38]);
+        machine.iu1_plasticizing_rate_gs = parseValue(row[39]);
+        machine.iu1_ld_ratio = parseValue(row[40]);
+        machine.iu1_injection_pressure_bar = parseValue(row[41]);
+        machine.iu1_screw_type = parseValue(row[42]);
+        machine.iu1_nozzle = parseValue(row[43]);
+        machine.iu2_screw_diameter_mm = parseValue(row[44]);
+        machine.iu2_shot_volume_cm3 = parseValue(row[45]);
+        machine.iu2_injection_flow_cm3s = parseValue(row[46]);
+        machine.iu2_plasticizing_rate_gs = parseValue(row[47]);
+        machine.iu2_ld_ratio = parseValue(row[48]);
+        machine.iu2_injection_pressure_bar = parseValue(row[49]);
+        machine.iu2_screw_type = parseValue(row[50]);
+        machine.iu2_nozzle = parseValue(row[51]);
+        machine.robot_manufacturer = parseValue(row[52]);
+        machine.robot_model = parseValue(row[53]);
+        machine.robot_serial = parseValue(row[54]);
+        machine.robot_vacuum_circuits = parseValue(row[55]);
+        machine.robot_air_circuits = parseValue(row[56]);
+        machine.robot_electrical_signals = parseValue(row[57]);
+        machine.remarks = parseValue(row[61]);
       }
 
       // Validate and coerce field types (numeric fields to numbers, boolean fields to booleans)
