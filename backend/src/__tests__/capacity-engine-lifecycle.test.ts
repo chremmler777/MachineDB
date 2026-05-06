@@ -10,7 +10,7 @@ const baseCC: ClassCapacityRow = {
 };
 
 const m = (id: number, opts: Partial<MachineRow> = {}): MachineRow => ({
-  id, clamping_force_kn: 80, iu1_shot_volume_cm3: 1000,
+  id, clamping_force_t: 80, iu1_shot_volume_cm3: 1000,
   is_2k: false, has_mucell: false, has_variotherm: false,
   in_service_from: null, planned_scrap_from: null, ...opts,
 });

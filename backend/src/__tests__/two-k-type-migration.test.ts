@@ -21,13 +21,13 @@ test('two_k_type migration: rejects invalid two_k_type values', async () => {
   );
 });
 
-test('two_k_type migration: renames clamping_force_kn to clamping_force_t', async () => {
+test('two_k_type migration: renames clamping_force_t to clamping_force_t', async () => {
   const res = await pool.query(`
     SELECT column_name FROM information_schema.columns
-    WHERE table_name='machines' AND column_name IN ('clamping_force_kn','clamping_force_t')`);
+    WHERE table_name='machines' AND column_name IN ('clamping_force_t','clamping_force_t')`);
   const names = res.rows.map((r: { column_name: string }) => r.column_name);
   assert.ok(names.includes('clamping_force_t'), 'expected clamping_force_t to exist');
-  assert.ok(!names.includes('clamping_force_kn'), 'expected clamping_force_kn to be gone');
+  assert.ok(!names.includes('clamping_force_t'), 'expected clamping_force_t to be gone');
 });
 
 test('two_k_type migration: backfills MX Arburg 220T cohort to 2k_no_turntable', async () => {

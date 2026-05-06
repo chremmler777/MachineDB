@@ -45,7 +45,7 @@ test('POST persists in_service_from and planned_scrap_from', async () => {
   const r = await req('POST', '/api/machines', {
     internal_name: 'TEST_LIFECYCLE_POST',
     plant_location: 'USA',
-    clamping_force_kn: 80,
+    clamping_force_t: 80,
     in_service_from: '2026-10-01',
     planned_scrap_from: '2030-06-01',
   });
@@ -59,7 +59,7 @@ test('PUT sets in_service_from on a machine that had NULL', async () => {
   const created = await req('POST', '/api/machines', {
     internal_name: 'TEST_LIFECYCLE_PUT',
     plant_location: 'USA',
-    clamping_force_kn: 80,
+    clamping_force_t: 80,
   });
   assert.equal(created.status, 201);
 
@@ -77,7 +77,7 @@ test('PUT rejects scrap-before-service with 400', async () => {
   const created = await req('POST', '/api/machines', {
     internal_name: 'TEST_LIFECYCLE_BAD_ORDER',
     plant_location: 'USA',
-    clamping_force_kn: 80,
+    clamping_force_t: 80,
   });
   assert.equal(created.status, 201);
 
