@@ -24,6 +24,11 @@ In scope:
 - Rollup on `GET /v1/capacity` grouped by `two_k_type`
 - Public capability endpoint so RFQ can pull the enum vocabulary at runtime
   instead of hardcoding it
+- Rename column `clamping_force_t` → `clamping_force_t` (values were always
+  tons; legacy mis-naming bundled into this rollout to avoid future confusion
+  for RFQ and other consumers)
+- Static contract test fixtures published at `docs/contracts/rfq/` so RFQ can
+  build against them and decouple from dev-API uptime
 
 Out of scope (V1):
 - Independent `has_turntable` flag (derivable from `two_k_type`)
@@ -139,7 +144,7 @@ New optional query parameters:
 |---|---|---|
 | `two_k_type` | enum or `null` | Exact match. `null` (literal string) matches 1K machines. |
 | `site` | enum | Already exists if present; reused. Maps to `plant_location`. |
-| `min_tonnage` | number | Filter on `clamping_force_kn` (legacy column name; values are tons). |
+| `min_tonnage` | number | Filter on `clamping_force_t` (tons). |
 | `max_tonnage` | number | Same column. |
 | `min_platen_x` | number | `platen_horizontal_mm` |
 | `min_platen_y` | number | `platen_vertical_mm` |
@@ -199,6 +204,12 @@ Machine list (read view): show the value as a small badge next to the existing
 `two_k_type=parallel_injection` returns only parallel-injection machines.
 Cross-2K substitution is not allowed (different physical mechanisms).
 
+**Strict null on sizing filters.** If a `min_*` filter is supplied
+(`min_barrel_2_g`, `min_platen_x`, `min_daylight`, etc.) and the machine row
+has `NULL` for that field, the row is **excluded**. We'd rather miss a
+candidate than offer one we can't verify. RFQ flags incomplete-data machines
+in its UI based on the same null fields.
+
 **1K-on-2K is allowed but RFQ-driven.** When RFQ queries for a 1K part, it
 omits the `two_k_type` filter rather than passing `null`. MachineDB returns
 all machines that meet the sizing constraints, regardless of `two_k_type`.
@@ -228,6 +239,33 @@ preferred.
 
 No data migration is destructive. Rollback: drop the column; `is_2k` was
 already there.
+
+## Column rename: `clamping_force_kn` → `clamping_force_t`
+
+Single `ALTER TABLE machines RENAME COLUMN`. All in-repo references are
+updated in the same migration:
+- `backend/src/db/migrate.ts` (CASE statement that backfills `tonnage_class`)
+- All routes that read/write the column (`v1-machines`, `import`, capacity
+  engine fixtures, etc.)
+- Frontend reads of `clamping_force_kn` if any (verify during impl)
+- Test fixtures
+
+API responses use `clamping_force_t`. No backwards-compat alias — the legacy
+name was misleading and there are no known external consumers besides RFQ
+(which is being onboarded in this rollout).
+
+## Contract fixtures for RFQ
+
+Static JSON fixtures published in repo at `docs/contracts/rfq/`:
+- `two-k-vocabulary.json` — vocabulary endpoint response
+- `machines-list.json` — `/v1/machines` response covering all 4 buckets
+  including the unpopulated-IU2 edge case
+- `capacity-rollup.json` — `/v1/capacity?group_by=two_k_type` response with
+  `null` 1K bucket
+
+RFQ builds against these; switches to live dev API before integration test
+gate. Fixture files are version-controlled and updated alongside any contract
+change.
 
 ## Open questions
 

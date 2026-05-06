@@ -1,0 +1,68 @@
+{
+  "_comment": "Contract fixture for GET /v1/capacity?group_by=two_k_type. Buckets are (site, period, two_k_type); null bucket is 1K-only. Per-machine availability still in response so existing capacity consumers are unaffected. Numbers are illustrative.",
+  "_query_example": "GET /v1/capacity?site=MX&year=2027&group_by=two_k_type",
+  "rollups": [
+    {
+      "site": "MX",
+      "period": "2027",
+      "two_k_type": null,
+      "machine_count": 18,
+      "available_machine_years": 16.42
+    },
+    {
+      "site": "MX",
+      "period": "2027",
+      "two_k_type": "2k_no_turntable",
+      "machine_count": 8,
+      "available_machine_years": 7.83
+    },
+    {
+      "site": "MX",
+      "period": "2027",
+      "two_k_type": "parallel_injection",
+      "machine_count": 3,
+      "available_machine_years": 2.83
+    },
+    {
+      "site": "US",
+      "period": "2027",
+      "two_k_type": null,
+      "machine_count": 12,
+      "available_machine_years": 11.50
+    },
+    {
+      "site": "US",
+      "period": "2027",
+      "two_k_type": "2k_no_turntable",
+      "machine_count": 8,
+      "available_machine_years": 7.92
+    },
+    {
+      "site": "US",
+      "period": "2027",
+      "two_k_type": "2k_turntable",
+      "machine_count": 3,
+      "available_machine_years": 2.50,
+      "_note": "Lower availability reflects one machine with planned_scrap_from set mid-year (illustrative)."
+    }
+  ],
+  "machines": [
+    {
+      "_comment": "Per-machine block preserved for backwards compat; abbreviated here.",
+      "id": 44,
+      "internal_name": "KM 1000-1",
+      "site": "US",
+      "two_k_type": "2k_turntable",
+      "year": 2027,
+      "available_fraction": 1.0
+    },
+    {
+      "id": 24,
+      "internal_name": "M08",
+      "site": "MX",
+      "two_k_type": "parallel_injection",
+      "year": 2027,
+      "available_fraction": 1.0
+    }
+  ]
+}
