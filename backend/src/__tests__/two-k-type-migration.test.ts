@@ -54,13 +54,10 @@ test('two_k_type migration: backfills US KM 350-4/550/1300/1600 cohort to 2k_no_
 });
 
 test('two_k_type migration: backfills MX Sumitomo 280 + Nissei DCX600/800 to parallel_injection', async () => {
-  // Spec cohort is M27/M08/M19; M08 is not currently in the production data set
-  // (only M27 and M19 exist). Assert that every cohort row that DOES exist is
-  // tagged parallel_injection — the migration UPDATE is a safe no-op for missing rows.
   const res = await pool.query(`
     SELECT internal_name, two_k_type FROM machines
-    WHERE internal_name IN ('M27','M08','M19') ORDER BY internal_name`);
-  assert.ok(res.rows.length >= 1, 'expected at least one parallel-injection cohort row');
+    WHERE internal_name IN ('M27','M8','M19') ORDER BY internal_name`);
+  assert.equal(res.rows.length, 3);
   for (const row of res.rows) {
     assert.equal(row.two_k_type, 'parallel_injection');
   }

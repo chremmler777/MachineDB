@@ -299,7 +299,7 @@ const migrations = [
   `UPDATE machines SET two_k_type='2k_no_turntable'
      WHERE internal_name IN ('KM 350-4','KM 550-1','KM 550-2','KM 1300-1','KM 1300-2','KM 1300-3','KM 1600-1','KM 1600-2')`,
   `UPDATE machines SET two_k_type='parallel_injection'
-     WHERE internal_name IN ('M27','M08','M19')`,
+     WHERE internal_name IN ('M27','M8','M19')`,
   `UPDATE machines SET two_k_type='2k_turntable'
      WHERE internal_name IN ('KM 1000-1','KM 1000-2','KM 1000-3')`,
 
