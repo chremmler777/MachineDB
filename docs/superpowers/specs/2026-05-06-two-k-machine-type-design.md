@@ -70,17 +70,22 @@ existing rows and the only "fourth" state.
 ## Backfill
 
 Explicit cohort assignment by `internal_name`. No auto-detection from
-`iu2_*` columns — some 2K machines (M28, M29) have IU2 specs missing in the
-source data, and a detection rule would miss them.
+`iu2_*` columns — IU2 presence does not reliably correlate with 2K
+classification (e.g. `KM 350-1/-2/-3` are 1K despite being adjacent to the 2K
+`KM 350-4`), so explicit cohort assignment is the only safe approach.
 
 | Cohort | `internal_name`s | `two_k_type` |
 |---|---|---|
 | MX Arburg Allrounder 220T | `M01, M02, M03, M04, M12, M13, M14, M23` | `2k_no_turntable` |
-| MX Sumitomo 280 + Nissei NEX360 | `M27, M28, M29` | `parallel_injection` |
+| US KM 350/550/1300/1600 with 2 IU | `KM 350-4, KM 550-1, KM 550-2, KM 1300-1, KM 1300-2, KM 1300-3, KM 1600-1, KM 1600-2` | `2k_no_turntable` |
+| MX Sumitomo 280 + Nissei DCX600/800 | `M27, M08, M19` | `parallel_injection` |
 | US KM 1000T | `KM 1000-1, KM 1000-2, KM 1000-3` | `2k_turntable` |
 
-Total: 14 machines. Machines outside these cohorts are left `NULL` and edited
+Total: 22 machines. Machines outside these cohorts are left `NULL` and edited
 per-machine via the UI as needed.
+
+Notable exclusions: `KM 350-1/-2/-3` are 1K (no IU2) — only `KM 350-4` is 2K.
+`M28`/`M29` (Nissei NEX360) are 1K despite the 2K-adjacent model naming.
 
 The migration prints the matched rows before committing, so the assignment is
 auditable in the migration log.
