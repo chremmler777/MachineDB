@@ -50,6 +50,7 @@ const FORM_SECTIONS: SectionDef[] = [
         { value: '2k_no_turntable', label: '2K — No turntable' },
         { value: 'parallel_injection', label: 'Parallel injection' },
       ] },
+      { key: 'tool_center_distance_horizontal_mm', label: 'Tool-center distance (parallel)', type: 'number', unit: 'mm' },
       { key: 'centering_ring_nozzle_mm', label: 'Centering Ring Nozzle', type: 'number', unit: 'mm' },
       { key: 'centering_ring_ejector_mm', label: 'Centering Ring Ejector', type: 'number', unit: 'mm' },
       { key: 'fine_centering', label: 'Fine Centering', type: 'boolean' },

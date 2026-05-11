@@ -43,6 +43,7 @@ const COLUMN_GROUPS = [
     color: 'rgba(255, 255, 153, 1)', // Soft Yellow
     columns: [
       { key: 'clamping_force_t', label: 'col.clampingForce' },
+      { key: 'tool_center_distance_horizontal_mm', label: 'col.toolCenterDist' },
       { key: 'centering_ring_nozzle_mm', label: 'col.centerNozzle' },
       { key: 'centering_ring_ejector_mm', label: 'col.centerEjector' },
       { key: 'fine_centering', label: 'col.fineCentering' },
@@ -377,13 +378,13 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                   {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
                 <select value={twoShot} onChange={(e) => setTwoShot(e.target.value)}
-                  style={{ flex: 1, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
-                  <option value="">All</option>
+                  style={{ flex: 1.2, padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
+                  <option value="">2K: All</option>
                   <option value="1k">1K only</option>
                   <option value="any2k">Any 2K</option>
-                  <option value="2k_turntable">2K — Turntable</option>
-                  <option value="2k_no_turntable">2K — No turntable</option>
-                  <option value="parallel_injection">Parallel injection</option>
+                  <option value="2k_turntable">2K Turntable</option>
+                  <option value="2k_no_turntable">2K Index</option>
+                  <option value="parallel_injection">2K Parallel</option>
                 </select>
               </div>
             </div>
@@ -642,6 +643,11 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
                             <span style={{ flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {isSusp ? '⚑ ' : ''}{formatValue(m[col.key], col.key)}
+                              {m.plant_location === 'Mexico' && m.clamping_force_t != null && (
+                                <span style={{ marginLeft: '6px', opacity: 0.7, fontWeight: 400 }}>
+                                  {Math.round(Number(m.clamping_force_t))}
+                                </span>
+                              )}
                             </span>
                             <LifecycleBadge inServiceFrom={m.in_service_from} plannedScrapFrom={m.planned_scrap_from} />
                             {m.two_k_type && (

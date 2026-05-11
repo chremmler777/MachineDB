@@ -86,6 +86,7 @@ const translations: Record<Language, Record<string, string>> = {
     'col.weight': 'Weight (kg)',
     // Column labels - Clamping Unit
     'col.clampingForce': 'Clamping (t)',
+    'col.toolCenterDist': 'Tool-center dist (mm)',
     'col.centerNozzle': 'Center Nozzle (mm)',
     'col.centerEjector': 'Center Ejector (mm)',
     'col.fineCentering': 'Fine Center',
@@ -295,6 +296,7 @@ const translations: Record<Language, Record<string, string>> = {
     'col.weight': 'Peso (kg)',
     // Column labels - Clamping Unit
     'col.clampingForce': 'Cierre (t)',
+    'col.toolCenterDist': 'Dist. centro molde (mm)',
     'col.centerNozzle': 'Centrado boquilla (mm)',
     'col.centerEjector': 'Centrado expulsor (mm)',
     'col.fineCentering': 'Cent. fino',
@@ -504,6 +506,7 @@ const translations: Record<Language, Record<string, string>> = {
     'col.weight': 'Gewicht (kg)',
     // Column labels - Clamping Unit
     'col.clampingForce': 'Schließkraft (t)',
+    'col.toolCenterDist': 'Werkzeugmittenabstand (mm)',
     'col.centerNozzle': 'Zentrier. Düse (mm)',
     'col.centerEjector': 'Zentrier. Ausw. (mm)',
     'col.fineCentering': 'Feinjust.',

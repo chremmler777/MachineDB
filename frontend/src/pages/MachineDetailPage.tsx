@@ -117,6 +117,7 @@ export const MachineDetailPage: React.FC<MachineDetailPageProps> = ({ machineId,
           machine.two_k_type === '2k_no_turntable' ? '2K — No turntable' :
           machine.two_k_type === 'parallel_injection' ? 'Parallel injection' :
           '1K (single component)'),
+        field('Tool-center distance (parallel)', 'tool_center_distance_horizontal_mm', machine.tool_center_distance_horizontal_mm, 'mm'),
         field('Centering Ring Nozzle', 'centering_ring_nozzle_mm', machine.centering_ring_nozzle_mm, 'mm'),
         field('Centering Ring Ejector', 'centering_ring_ejector_mm', machine.centering_ring_ejector_mm, 'mm'),
         field('Fine Centering', 'fine_centering', machine.fine_centering),

@@ -28,6 +28,7 @@ export interface Machine {
   // Clamping Unit
   clamping_force_t?: number;
   two_k_type: TwoKType | null;
+  tool_center_distance_horizontal_mm?: number;
   centering_ring_nozzle_mm?: number;
   centering_ring_ejector_mm?: number;
   fine_centering?: boolean;

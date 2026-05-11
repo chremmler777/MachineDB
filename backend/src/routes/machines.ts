@@ -16,6 +16,7 @@ const numericFields = new Set([
   'iu1_ld_ratio', 'iu1_injection_pressure_bar', 'iu1_shot_weight_g',
   'iu2_screw_diameter_mm', 'iu2_shot_volume_cm3', 'iu2_injection_flow_cm3s', 'iu2_plasticizing_rate_gs',
   'iu2_ld_ratio', 'iu2_injection_pressure_bar', 'iu2_shot_weight_g',
+  'tool_center_distance_horizontal_mm',
   'robot_vacuum_circuits'
 ]);
 

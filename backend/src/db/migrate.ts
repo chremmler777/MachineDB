@@ -305,6 +305,13 @@ const migrations = [
 
   `UPDATE machines SET is_2k = (two_k_type IS NOT NULL)`,
 
+  // Parallel-injection: horizontal distance between the two tool centers (mm).
+  `ALTER TABLE machines
+     ADD COLUMN IF NOT EXISTS tool_center_distance_horizontal_mm DECIMAL(10,2)`,
+  `UPDATE machines SET tool_center_distance_horizontal_mm = 500 WHERE internal_name = 'M27' AND tool_center_distance_horizontal_mm IS NULL`,
+  `UPDATE machines SET tool_center_distance_horizontal_mm = 800 WHERE internal_name = 'M8'  AND tool_center_distance_horizontal_mm IS NULL`,
+  `UPDATE machines SET tool_center_distance_horizontal_mm = 1000 WHERE internal_name = 'M19' AND tool_center_distance_horizontal_mm IS NULL`,
+
   `DO $$
    BEGIN
      IF EXISTS (SELECT 1 FROM information_schema.columns
