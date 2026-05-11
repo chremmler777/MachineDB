@@ -44,6 +44,7 @@ function mapRow(row: any) {
     mold_height_max_mm: dec(row.mold_height_max_mm),
     is_2k: has_two_k,
     two_k_type: row.two_k_type ?? null,
+    tool_center_distance_horizontal_mm: dec(row.tool_center_distance_horizontal_mm),
     injection_units: has_iu2 || has_two_k ? 2 : 1,
     barrel_2_volume_cm3: dec(row.iu2_shot_volume_cm3),
     barrel_2_g: dec(row.iu2_shot_weight_g),
@@ -60,7 +61,7 @@ const SELECT_COLUMNS = `
   iu1_shot_volume_cm3, iu1_shot_weight_g, iu1_screw_diameter_mm,
   mold_height_min_mm, mold_height_max_mm,
   iu2_shot_volume_cm3, iu2_shot_weight_g, iu2_screw_diameter_mm,
-  two_k_type,
+  two_k_type, tool_center_distance_horizontal_mm,
   remarks, updated_at
 `;
 
