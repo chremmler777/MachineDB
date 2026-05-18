@@ -327,7 +327,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const rowHover = darkMode ? '#2d3748' : '#eff6ff';
 
   return (
-    <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)' }}>
+    <div style={{ padding: '24px 24px 0 24px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
 
       {/* Header + filters */}
       <div style={{ marginBottom: '16px', flexShrink: 0 }}>
@@ -352,11 +352,11 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
         </div>
 
         {/* Grouped filter boxes */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch', minWidth: 0 }}>
 
           {/* Machine Info — blue */}
           <div style={{ flex: 3, backgroundColor: 'rgba(173, 216, 230, 0.15)', border: '1px solid rgba(173, 216, 230, 0.5)', borderRadius: '6px', padding: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '700', color: '#1a6080', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.machineInfo')}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#1a6080', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('filter.machineInfo')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <input
                 type="text"
@@ -392,7 +392,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
           {/* Clamping Unit — yellow */}
           <div style={{ flex: 1.5, backgroundColor: 'rgba(255, 255, 153, 0.15)', border: '1px solid rgba(255, 220, 50, 0.5)', borderRadius: '6px', padding: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '700', color: '#7a6a00', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.clampingUnit')}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#7a6a00', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('filter.clampingUnit')}</div>
             <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '3px' }}>{t('filter.force')}</div>
             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
               <select value={clampingMin} onChange={(e) => setClampingMin(e.target.value)}
@@ -411,7 +411,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
           {/* Injection Unit 1 — green */}
           <div style={{ flex: 2, backgroundColor: 'rgba(144, 238, 144, 0.15)', border: '1px solid rgba(100, 200, 100, 0.5)', borderRadius: '6px', padding: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '700', color: '#1a6b1a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.injectionUnit1')}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#1a6b1a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('filter.injectionUnit1')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div>
                 <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.screwDiam')}</div>
@@ -450,7 +450,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
           {/* Injection Unit 2 — red */}
           <div style={{ flex: 2, backgroundColor: 'rgba(255, 130, 130, 0.15)', border: '1px solid rgba(220, 80, 80, 0.5)', borderRadius: '6px', padding: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '700', color: '#7a1a1a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.injectionUnit2')}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#7a1a1a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('filter.injectionUnit2')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div>
                 <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.screwDiam')}</div>
@@ -489,7 +489,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
           {/* Robot — pink */}
           <div style={{ flex: 1, backgroundColor: 'rgba(255, 192, 203, 0.15)', border: '1px solid rgba(220, 130, 150, 0.5)', borderRadius: '6px', padding: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '700', color: '#6b1a3d', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.robot')}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#6b1a3d', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('filter.robot')}</div>
             <div style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, marginBottom: '2px' }}>{t('filter.hasRobot')}</div>
             <select value={hasRobot} onChange={(e) => setHasRobot(e.target.value)}
               style={{ width: '100%', padding: '5px 4px', border: `1px solid ${borderColor}`, borderRadius: '4px', backgroundColor: headerBg, color: uiTextColor, fontSize: '12px' }}>
@@ -501,7 +501,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
 
           {/* Additional — gray */}
           <div style={{ flex: 1.5, backgroundColor: 'rgba(211, 211, 211, 0.12)', border: '1px solid rgba(150, 150, 150, 0.4)', borderRadius: '6px', padding: '8px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '700', color: darkMode ? '#9ca3af' : '#4b5563', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('filter.additional')}</div>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: darkMode ? '#9ca3af' : '#4b5563', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('filter.additional')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '11px', color: uiTextColor, opacity: 0.8, whiteSpace: 'nowrap' }}>{t('filter.rotary')}</span>
