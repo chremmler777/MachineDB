@@ -39,6 +39,8 @@ export const machineService = {
   getRevisions: (id: number) => api.get(`/machines/${id}/revisions`),
   compare: (ids: number[]) => api.get(`/machines/compare/${ids.join(',')}`),
   finder: (requirements: any) => api.post('/machines/finder/search', requirements),
+  exportList: (params: { format: 'xlsx' | 'html'; detail: 'overview' | 'full'; plant?: string }) =>
+    api.get('/machines/export', { params, responseType: 'blob' }),
   getComments: (id: number) => api.get(`/machines/${id}/comments`),
   addComment: (id: number, comment: string) => api.post(`/machines/${id}/comments`, { comment }),
   revertRevision: (machineId: number, revisionId: number) => api.post(`/machines/${machineId}/revisions/${revisionId}/revert`),

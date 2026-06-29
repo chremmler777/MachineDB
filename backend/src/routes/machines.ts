@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import pool from '../db/connection.js';
 import { verifyToken, requireMaster, AuthRequest } from '../middleware/auth.js';
 import { Machine } from '../types/index.js';
+import { buildWorkbook, buildHtml, Detail } from '../utils/machine-export.js';
 
 const router = Router();
 
@@ -225,6 +226,48 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('List machines error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Export machine list as Excel or a styled, printable HTML page.
+// Query params: format=xlsx|html, detail=overview|full, plant=USA|Mexico (omit/all = both).
+// Must be declared before '/:id' so 'export' isn't captured as an id.
+router.get('/export', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const format = (req.query.format as string) === 'html' ? 'html' : 'xlsx';
+    const detail: Detail = (req.query.detail as string) === 'full' ? 'full' : 'overview';
+    const plantRaw = req.query.plant as string | undefined;
+    const plant = plantRaw === 'USA' || plantRaw === 'Mexico' ? plantRaw : undefined;
+
+    const params: any[] = [];
+    let query = 'SELECT * FROM machines';
+    if (plant) {
+      query += ' WHERE plant_location = $1';
+      params.push(plant);
+    }
+    query += ' ORDER BY internal_name ASC';
+    const result = await pool.query(query, params);
+    const rows = result.rows;
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const facilitySlug = plant ? plant : 'AllFacilities';
+    const baseName = `KTX_Machines_${facilitySlug}_${detail}_${dateStr}`;
+
+    if (format === 'html') {
+      // Download as a self-contained .html file (open it to view / print / save as PDF).
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${baseName}.html"`);
+      res.send(buildHtml(rows, detail, plant, dateStr));
+      return;
+    }
+
+    const buffer = buildWorkbook(rows, detail, plant, dateStr);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${baseName}.xlsx"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Export machines error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

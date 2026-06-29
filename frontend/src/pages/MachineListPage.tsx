@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { machineService, fileService } from '../services/api';
 import { LifecycleBadge } from '../components/LifecycleBadge';
+import { ExportDialog } from '../components/ExportDialog';
 import { useLanguage } from '../context/LanguageContext';
 
 interface MachineListPageProps {
@@ -202,6 +203,7 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
   const [rotaryTable, setRotaryTable] = useState('');
   const [sortKey, setSortKey] = useState<string>('internal_name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [showExport, setShowExport] = useState(false);
 
   const handleWamDownload = async (fileId: number, fileName: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -335,20 +337,28 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
           <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: uiTextColor }}>
             {t('machines.machinesCount')} ({machines.length})
           </h2>
-          <button
-            onClick={() => {
-              setSearch(''); setPlant(''); setManufacturer('');
-              setClampingMin(''); setClampingMax('');
-              setScrewMin(''); setScrewMax('');
-              setScrew2Min(''); setScrew2Max('');
-              setVol1Min(''); setVol1Max('');
-              setVol2Min(''); setVol2Max('');
-              setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
-            }}
-            style={{ padding: '7px 16px', border: 'none', borderRadius: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: '600', boxShadow: '0 1px 4px rgba(239,68,68,0.3)', transition: 'all 0.15s' }}
-          >
-            {t('machines.clearFilters')}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setShowExport(true)}
+              style={{ padding: '7px 16px', border: 'none', borderRadius: '6px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: '600', boxShadow: '0 1px 4px rgba(59,130,246,0.3)', transition: 'all 0.15s' }}
+            >
+              {t('machines.export')}
+            </button>
+            <button
+              onClick={() => {
+                setSearch(''); setPlant(''); setManufacturer('');
+                setClampingMin(''); setClampingMax('');
+                setScrewMin(''); setScrewMax('');
+                setScrew2Min(''); setScrew2Max('');
+                setVol1Min(''); setVol1Max('');
+                setVol2Min(''); setVol2Max('');
+                setTwoShot(''); setHasRobot(''); setRotaryTable(''); setMuCell('');
+              }}
+              style={{ padding: '7px 16px', border: 'none', borderRadius: '6px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: '600', boxShadow: '0 1px 4px rgba(239,68,68,0.3)', transition: 'all 0.15s' }}
+            >
+              {t('machines.clearFilters')}
+            </button>
+          </div>
         </div>
 
         {/* Grouped filter boxes */}
@@ -704,6 +714,9 @@ export const MachineListPage: React.FC<MachineListPageProps> = ({ onNavigate, da
             </tbody>
           </table>
         </div>
+      )}
+      {showExport && (
+        <ExportDialog darkMode={darkMode} defaultPlant={plant} onClose={() => setShowExport(false)} />
       )}
       {viewerLoading && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, color: '#fff', fontSize: '14px' }}>

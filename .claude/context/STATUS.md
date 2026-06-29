@@ -1,9 +1,9 @@
 # Status
 
-**Phase**: 3 — External service API for RFQ2 (complete, awaiting consumer wire-up)
-**Last action**: Deployed `/v1/machines`, `/v1/machines/{id}`, `/v1/machines/suggest`, `/health` under bearer-token auth. Sent token + sample responses to RFQ2 chat. Restored 53 machines from orphaned Postgres volume.
-**Next step**: Wait for RFQ2 to confirm successful integration (first live request hits). Then start Phase 4: data-quality cleanup (suspicious `iu1_shot_volume_cm3` values).
-**Updated**: 2026-04-04
+**Phase**: 4 — tooling / data quality
+**Last action**: Machine-list **export** — `GET /api/machines/export` (facility US/MX/all, overview/full detail). Formats are now **Excel + HTML** (PDF dropped). Both use the bright Machines-tab colour grouping with non-truncating headers: Excel via `xlsx-js-style` (group-colour fills, wrapText, sized columns); HTML served inline + opened in a new tab with a Print/Save-as-PDF button. Frontend Export dialog + en/es/de strings. Built + deployed via master compose; verified through nginx (content-types, pastel headers, USA→26 rows, no-auth→401). See decisions.md 2026-06-29.
+**Next step**: Data-quality cleanup of suspicious `iu1_shot_volume_cm3` values. RFQ2 `/v1/*` integration still awaiting first live request.
+**Updated**: 2026-06-29
 
 ## Open threads
 - **Data quality**: Several `iu1_shot_volume_cm3` values look off by ~25× (e.g. 2377 cm³ on 80-tonne Nissei). Probably Excel import column-mapping glitch. Needs manual review against spec sheets.
