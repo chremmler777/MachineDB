@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import pool from '../db/connection.js';
 
 export interface SSOPayload {
   sub: string;
@@ -40,10 +41,43 @@ function mapRoleToMachineDB(roles: SSOPayload['roles']): 'master' | 'viewer' | n
 }
 
 /**
+ * Resolve the SSO user to a *local* MachineDB users.id.
+ *
+ * The JWT `sub` is the AdminPanel user id, which lives in a different id space
+ * than MachineDB's local `users` table (only master/viewer_usa/viewer_mexico are
+ * seeded, ids 1/2/3). Writing the raw `sub` into created_by/updated_by/changed_by
+ * (all FK -> users(id)) throws a foreign-key violation -> 500 whenever the SSO id
+ * isn't coincidentally 1/2/3. We therefore mirror the SSO identity into the local
+ * table keyed by *username* (never by id — the id spaces collide) and return the
+ * local id so the FK columns stay valid.
+ *
+ * Hot path is a single indexed SELECT; the INSERT only runs on first-ever login.
+ * password_hash is a non-loginable sentinel: these users authenticate via SSO only.
+ */
+async function resolveLocalUserId(
+  username: string,
+  role: 'master' | 'viewer',
+): Promise<number> {
+  const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+  if (existing.rows.length > 0) {
+    return existing.rows[0].id;
+  }
+  // ON CONFLICT guards against a race between two concurrent first-logins.
+  const inserted = await pool.query(
+    `INSERT INTO users (username, password_hash, role)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
+     RETURNING id`,
+    [username, 'sso:no-local-login', role]
+  );
+  return inserted.rows[0].id;
+}
+
+/**
  * SSO middleware: validate JWT from HttpOnly cookie or Bearer header
  * Enriches request with user info and mapped role
  */
-export function ssoAuth(req: AuthRequest, res: Response, next: NextFunction): void {
+export async function ssoAuth(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   let token: string | null = null;
 
   // Try to get token from HttpOnly cookie first (SSO)
@@ -76,9 +110,23 @@ export function ssoAuth(req: AuthRequest, res: Response, next: NextFunction): vo
       return;
     }
 
+    // Resolve to a LOCAL users.id so FK columns (created_by/updated_by/changed_by)
+    // stay valid. The JWT sub is an AdminPanel id from a different id space and
+    // must not be used directly. Falls back to a synthetic username if the token
+    // somehow omits one, so the unique-username upsert always has a stable key.
+    const localUsername = payload.username || `sso_user_${payload.sub}`;
+    let localUserId: number;
+    try {
+      localUserId = await resolveLocalUserId(localUsername, mappedRole);
+    } catch (dbErr) {
+      console.error('SSO user resolution failed:', dbErr);
+      res.status(500).json({ error: 'Failed to resolve user account' });
+      return;
+    }
+
     // Enrich request with user and mapped role
     req.user = {
-      userId: parseInt(payload.sub, 10),
+      userId: localUserId,
       username: payload.username,
       role: mappedRole,
       roles: payload.roles || [],

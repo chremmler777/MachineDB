@@ -65,3 +65,9 @@
 **Why**: Active DB was empty after recent rebuilds. Data loss scare. Recovery path: `docker run -d -v machinedb_postgres_data:/var/lib/postgresql/data postgres:16` → pg_dump --data-only --table=machines --table=machine_revisions --table=files → copy + psql into active container.
 **Phase**: 3
 **Impact**: DO NOT DELETE the `machinedb_postgres_data` volume until we're 100% sure the active one has everything. Keep both until next backup strategy is defined.
+
+## [2026-07-01] SSO writes: mirror identity into local users table by username
+**Decision**: `ssoAuth` (backend/src/middleware/sso-auth.ts) no longer sets `req.user.userId = parseInt(payload.sub)`. It now resolves the SSO identity to a LOCAL `users.id`: SELECT by username, INSERT (ON CONFLICT username DO UPDATE) if absent, and uses that local id for FK columns.
+**Why**: The JWT `sub` is the AdminPanel user id (auth.py sets `sub = str(user.id)`), a DIFFERENT id space than MachineDB's local `users` table (only 3 seeded rows: 1/2/3). Writing raw `sub` into created_by/updated_by/changed_by (all FK → users(id)) threw a foreign-key violation → generic 500 "Internal server error" on ANY write, unless the AdminPanel id coincidentally equalled 1/2/3. Standalone/legacy login worked because it issues a token with a local id. NOT keyed by id because AdminPanel ids collide with the seeded local ids (id 2 = adminpanel user ≠ viewer_usa). Dropping the FKs was rejected: it breaks the machine_comments→users username join.
+**Phase**: (SSO / cross-app auth)
+**Impact**: SSO users get an auto-created local `users` row (password_hash = 'sso:no-local-login', non-loginable) on first write-authenticated request. Regression test: backend/src/__tests__/sso-auth-fk-user.test.ts. NOT YET DEPLOYED — awaiting approval to rebuild/restart the machinedb-backend container. Code + typecheck done; DB-integration test not run (needs test DB).
