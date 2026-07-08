@@ -37,6 +37,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .finally(() => setLoading(false));
   }, []);
 
+  // Sliding-session keepalive: renew the shared SSO cookie every 15 min
+  // while this tab is visible or recently used. 401 = session over ->
+  // hard-redirect to the AdminPanel hub (this app's existing pattern).
+  useEffect(() => {
+    const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+    let lastActivity = Date.now();
+    const markActivity = () => { lastActivity = Date.now(); };
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, markActivity, { passive: true }));
+
+    const tick = async () => {
+      const active = document.visibilityState === 'visible'
+        || Date.now() - lastActivity < REFRESH_INTERVAL_MS;
+      if (!active) return;
+      try {
+        const res = await fetch('/api/v1/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.status === 401) window.location.href = '/';
+      } catch { /* retry next tick */ }
+    };
+
+    const timer = setInterval(tick, REFRESH_INTERVAL_MS);
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      events.forEach((e) => window.removeEventListener(e, markActivity));
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   const logout = () => {
     // Redirect to admin panel logout
     window.location.href = '/api/v1/auth/logout';
