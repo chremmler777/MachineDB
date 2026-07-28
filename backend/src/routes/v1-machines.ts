@@ -51,6 +51,8 @@ function mapRow(row: any) {
     barrel_2_g: dec(row.iu2_shot_weight_g),
     screw_2_diameter_mm: dec(row.iu2_screw_diameter_mm),
     remarks: row.remarks,
+    in_service_from: row.in_service_from ?? null,
+    planned_scrap_from: row.planned_scrap_from ?? null,
     updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };
 }
@@ -63,6 +65,8 @@ const SELECT_COLUMNS = `
   mold_height_min_mm, mold_height_max_mm, opening_stroke_mm,
   iu2_shot_volume_cm3, iu2_shot_weight_g, iu2_screw_diameter_mm,
   two_k_type, tool_center_distance_horizontal_mm,
+  to_char(in_service_from,    'YYYY-MM-DD') AS in_service_from,
+  to_char(planned_scrap_from, 'YYYY-MM-DD') AS planned_scrap_from,
   remarks, updated_at
 `;
 
