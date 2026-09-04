@@ -109,8 +109,8 @@ const translations: Record<Language, Record<string, string>> = {
     'col.moldHMin': 'Mold H Min (mm)',
     'col.moldHMax': 'Mold H Max (mm)',
     'col.opening': 'Opening (mm)',
-    'col.clearH': 'Clear H (mm)',
-    'col.clearV': 'Clear V (mm)',
+    'col.clearH': 'Space between Tie Bars Horizontal (mm)',
+    'col.clearV': 'Space between Tie Bars Vertical (mm)',
     'col.rotaryTable': 'Rotary Table',
     'col.maxWeight': 'Max Wt (kg)',
     // Column labels - Tool Connections
@@ -335,8 +335,8 @@ const translations: Record<Language, Record<string, string>> = {
     'col.moldHMin': 'Alt. molde mín (mm)',
     'col.moldHMax': 'Alt. molde máx (mm)',
     'col.opening': 'Apertura (mm)',
-    'col.clearH': 'Luz H (mm)',
-    'col.clearV': 'Luz V (mm)',
+    'col.clearH': 'Luz entre columnas horizontal (mm)',
+    'col.clearV': 'Luz entre columnas vertical (mm)',
     'col.rotaryTable': 'Mesa giratoria',
     'col.maxWeight': 'Peso máx (kg)',
     // Column labels - Tool Connections
@@ -561,8 +561,8 @@ const translations: Record<Language, Record<string, string>> = {
     'col.moldHMin': 'Werkzeugh. min (mm)',
     'col.moldHMax': 'Werkzeugh. max (mm)',
     'col.opening': 'Öffnungshub (mm)',
-    'col.clearH': 'Lichtweite H (mm)',
-    'col.clearV': 'Lichtweite V (mm)',
+    'col.clearH': 'Holmabstand horizontal (mm)',
+    'col.clearV': 'Holmabstand vertikal (mm)',
     'col.rotaryTable': 'Drehtisch',
     'col.maxWeight': 'Max. Gew. (kg)',
     // Column labels - Tool Connections

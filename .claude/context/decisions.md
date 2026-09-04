@@ -73,3 +73,9 @@
 **Impact**: SSO users get an auto-created local `users` row (password_hash = 'sso:no-local-login', non-loginable) on first write-authenticated request. Regression test: backend/src/__tests__/sso-auth-fk-user.test.ts.
 
 **DEPLOYED 2026-07-01:** regression test run against a live-schema DB (docker exec into the running backend container, tsx --test) — confirmed the FK 500 is gone and `created_by` correctly resolves to the local user, then self-cleaned. Committed `f1bd2ac`, pushed to `origin/master`, prod (`/data/compose/machinedb`) fast-forwarded, `machinedb-backend` rebuilt from the parent compose and recreated (migrations idempotent, no crash-loop), nginx reloaded to pick up the new container IP. Verified live (frontend 200, API 401-unauthenticated as expected, machine row count/max(updated_at) unchanged). Confirmed working end-to-end by Christoph in-browser.
+
+## [2026-09-04] Rename "Clearance H/V" → "Space between Tie Bars Horizontal/Vertical"
+**Decision**: The `clearance_horizontal_mm` / `clearance_vertical_mm` columns are labelled "Space between Tie Bars Horizontal [mm]" / "… Vertical [mm]" everywhere users see them: Excel + HTML export (both overview and full levels, `backend/src/utils/machine-export.ts`), machine-list column headers (en/es/de in `frontend/src/context/LanguageContext.tsx`: en "Space between Tie Bars …", es "Luz entre columnas horizontal/vertical", de "Holmabstand horizontal/vertikal"), machine detail page, and admin panel field labels. DB column names, API keys and `/v1` mapping are UNCHANGED.
+**Why**: Christoph requested it — "Clear H/V" / "Clearance" was ambiguous on the export; the shop-floor term is the space between the tie bars.
+**Phase**: 4
+**Impact**: Label-only change, no data or API impact. Both backend and frontend containers need a rebuild to ship it. Not yet committed/deployed as of this entry.
