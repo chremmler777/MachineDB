@@ -8,7 +8,7 @@ interface ExportDialogProps {
   onClose: () => void;
 }
 
-type Detail = 'overview' | 'full';
+type Detail = 'overview' | 'full' | 'supplier';
 type Format = 'xlsx' | 'html';
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ darkMode = true, defaultPlant = '', onClose }) => {
@@ -30,10 +30,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ darkMode = true, def
     setBusy(true);
     setError(null);
     try {
-      const res = await machineService.exportList({ format, detail, ...(plantParam ? { plant: plantParam } : {}) });
+      const res = await machineService.exportList(
+        detail === 'supplier'
+          ? { audience: 'supplier', ...(plantParam ? { plant: plantParam } : {}) }
+          : { format, detail, ...(plantParam ? { plant: plantParam } : {}) },
+      );
 
       // Derive filename from Content-Disposition, fall back to a sensible default.
-      let filename = `KTX_Machines.${format}`;
+      let filename = `KTX_Machines.${detail === 'supplier' ? 'zip' : format}`;
       const cd = res.headers['content-disposition'] as string | undefined;
       const match = cd && /filename="?([^"]+)"?/.exec(cd);
       if (match) filename = match[1];
@@ -140,16 +144,19 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ darkMode = true, def
             <Segment active={detail === 'overview'} onClick={() => setDetail('overview')} title={t('export.overview')} desc={t('export.overviewDesc')} />
             <Segment active={detail === 'full'} onClick={() => setDetail('full')} title={t('export.full')} desc={t('export.fullDesc')} />
           </div>
+          <div style={{ display: 'flex', marginTop: '8px' }}>
+            <Segment active={detail === 'supplier'} onClick={() => setDetail('supplier')} title={t('export.supplier')} desc={t('export.supplierDesc')} />
+          </div>
         </div>
 
-        {/* Format */}
-        <div style={{ marginBottom: '20px' }}>
+        {/* Format (supplier package is always a ZIP) */}
+        {detail !== 'supplier' && <div style={{ marginBottom: '20px' }}>
           <div style={labelStyle}>{t('export.format')}</div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <Segment active={format === 'xlsx'} onClick={() => setFormat('xlsx')} title={t('export.excel')} />
             <Segment active={format === 'html'} onClick={() => setFormat('html')} title={t('export.html')} desc={t('export.htmlDesc')} />
           </div>
-        </div>
+        </div>}
 
         {error && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</div>}
 

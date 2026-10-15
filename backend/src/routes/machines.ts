@@ -3,8 +3,40 @@ import pool from '../db/connection.js';
 import { verifyToken, requireMaster, AuthRequest } from '../middleware/auth.js';
 import { Machine } from '../types/index.js';
 import { buildWorkbook, buildHtml, Detail } from '../utils/machine-export.js';
+import {
+  buildSupplierWorkbook, buildStoredZip, zipPaths, DrawingFile, DRAWING_FILE_TYPES,
+} from '../utils/supplier-export.js';
+import { promises as fsp } from 'node:fs';
 
 const router = Router();
+
+// Drawings (machine_files) for the given machines, in the machines' order.
+// Files missing on disk are skipped (logged), never fail the export.
+async function loadDrawingFiles(rows: any[]): Promise<DrawingFile[]> {
+  if (rows.length === 0) return [];
+  const order = new Map<number, number>(rows.map((r, i) => [r.id, i]));
+  const name = new Map<number, string>(rows.map((r) => [r.id, r.internal_name]));
+  const res = await pool.query(
+    `SELECT id, machine_id, file_name, file_path, description FROM machine_files
+     WHERE machine_id = ANY($1) AND file_type = ANY($2) ORDER BY file_name, id`,
+    [rows.map((r) => r.id), DRAWING_FILE_TYPES],
+  );
+  const sorted = res.rows.sort((a, b) => order.get(a.machine_id)! - order.get(b.machine_id)!);
+  const out: DrawingFile[] = [];
+  for (const f of sorted) {
+    try {
+      out.push({
+        machine: name.get(f.machine_id)!,
+        fileName: f.file_name,
+        description: f.description,
+        data: await fsp.readFile(f.file_path),
+      });
+    } catch (err) {
+      console.warn(`Supplier export: skipping missing file ${f.id} (${f.file_path})`);
+    }
+  }
+  return out;
+}
 
 // Define field types for validation
 const numericFields = new Set([
@@ -231,7 +263,8 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
 });
 
 // Export machine list as Excel or a styled, printable HTML page.
-// Query params: format=xlsx|html, detail=overview|full, plant=USA|Mexico (omit/all = both).
+// Query params: format=xlsx|html, detail=overview|full, plant=USA|Mexico (omit/all = both),
+// audience=supplier (ZIP: supplier workbook + full-resolution drawings; ignores format/detail).
 // Must be declared before '/:id' so 'export' isn't captured as an id.
 router.get('/export', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -252,6 +285,24 @@ router.get('/export', verifyToken, async (req: AuthRequest, res: Response) => {
 
     const dateStr = new Date().toISOString().slice(0, 10);
     const facilitySlug = plant ? plant : 'AllFacilities';
+
+    // Supplier package: ZIP with the supplier workbook (internal columns hidden,
+    // reference thumbnails) plus the drawings at original resolution.
+    if ((req.query.audience as string) === 'supplier') {
+      const files = await loadDrawingFiles(rows);
+      const paths = zipPaths(files);
+      const xlsx = await buildSupplierWorkbook(rows, files, paths, plant, dateStr);
+      const name = `KTX_Machines_${facilitySlug}_MouldDesign_${dateStr}`;
+      const zip = buildStoredZip([
+        { name: `${name}.xlsx`, data: xlsx },
+        ...files.map((f, i) => ({ name: paths[i], data: f.data })),
+      ]);
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${name}.zip"`);
+      res.send(zip);
+      return;
+    }
+
     const baseName = `KTX_Machines_${facilitySlug}_${detail}_${dateStr}`;
 
     if (format === 'html') {
