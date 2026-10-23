@@ -31,6 +31,8 @@ function mapRow(row: any) {
     internal_name: row.internal_name,
     manufacturer: row.manufacturer,
     model: row.model,
+    serial_number: row.serial_number ?? null,
+    order_number: row.order_number ?? null,
     plant: row.plant_location ? String(row.plant_location).toLowerCase() : null,
     clamping_force_t: dec(row.clamping_force_t),
     clearance_horizontal_mm: dec(row.clearance_horizontal_mm),
@@ -58,7 +60,7 @@ function mapRow(row: any) {
 }
 
 const SELECT_COLUMNS = `
-  id, internal_name, manufacturer, model, plant_location,
+  id, internal_name, manufacturer, model, serial_number, order_number, plant_location,
   clamping_force_t, clearance_horizontal_mm, clearance_vertical_mm,
   platen_horizontal_mm, platen_vertical_mm,
   iu1_shot_volume_cm3, iu1_shot_weight_g, iu1_screw_diameter_mm,
