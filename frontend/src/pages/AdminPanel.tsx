@@ -981,12 +981,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
         <div style={{ padding: '24px', overflowY: 'auto' }}>
           <div style={{ backgroundColor: panelBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '24px', maxWidth: '560px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', color: textPrimary }}>{t('admin.usersTitle')}</h3>
-            <p style={{ color: textSecondary, marginBottom: '16px', fontSize: '14px' }}>{t('admin.usersSoon')}</p>
-            <div style={{ backgroundColor: darkMode ? '#111827' : '#f9fafb', borderRadius: '6px', padding: '12px', fontSize: '13px', color: textPrimary }}>
-              <div style={{ marginBottom: '6px' }}><strong>master</strong> — password: master123 — Full access</div>
-              <div style={{ marginBottom: '6px' }}><strong>viewer_usa</strong> — password: viewer123 — USA read-only</div>
-              <div><strong>viewer_mexico</strong> — password: viewer123 — Mexico read-only</div>
-            </div>
+            <p style={{ color: textSecondary, fontSize: '14px' }}>{t('admin.usersSoon')}</p>
           </div>
         </div>
       )}

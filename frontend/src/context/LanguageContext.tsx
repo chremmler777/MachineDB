@@ -327,7 +327,7 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.importing': 'Importing...',
     'admin.importButton': 'Import Machines',
     'admin.usersTitle': 'User Management',
-    'admin.usersSoon': 'User management UI coming soon. Current credentials:',
+    'admin.usersSoon': 'Users and roles are managed in the KTX AdminPanel (single sign-on).',
     'machines.downloadWam': 'WAM',
   },
   es: {
@@ -648,7 +648,7 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.importing': 'Importando...',
     'admin.importButton': 'Importar máquinas',
     'admin.usersTitle': 'Gestión de usuarios',
-    'admin.usersSoon': 'La gestión de usuarios llegará pronto. Credenciales actuales:',
+    'admin.usersSoon': 'Los usuarios y roles se gestionan en el KTX AdminPanel (inicio de sesión único).',
     'machines.downloadWam': 'WAM',
   },
   de: {
@@ -969,7 +969,7 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.importing': 'Importiert...',
     'admin.importButton': 'Maschinen importieren',
     'admin.usersTitle': 'Benutzerverwaltung',
-    'admin.usersSoon': 'Benutzerverwaltung folgt. Aktuelle Zugangsdaten:',
+    'admin.usersSoon': 'Benutzer und Rollen werden im KTX AdminPanel verwaltet (Single Sign-on).',
     'machines.downloadWam': 'WAM',
   },
 };
