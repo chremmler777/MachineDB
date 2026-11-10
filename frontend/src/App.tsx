@@ -83,12 +83,7 @@ const AppContent: React.FC = () => {
             >
               {t('nav.finder')}
             </button>
-            <button
-              onClick={() => navigate('capacity')}
-              className={`px-3 py-2 rounded ${activePage === 'capacity' ? 'bg-blue-600 text-white' : darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-            >
-              Capacity
-            </button>
+            {/* Capacity nav button hidden for now (Christoph 2026-11-10); the page and route stay. */}
             {user.role === 'master' && (
               <button
                 onClick={() => navigate('admin')}
