@@ -13,7 +13,7 @@ type FieldDef = {
   type: 'text' | 'number' | 'boolean' | 'textarea' | 'select' | 'month';
   unit?: string;
   required?: boolean;
-  options?: { value: string; label: string }[];
+  options?: { value: string; label: string; labelKey?: string }[];
 };
 
 type SectionDef = { titleKey: string; fields: FieldDef[] };
@@ -28,7 +28,7 @@ const FORM_SECTIONS: SectionDef[] = [
       { key: 'serial_number', label: 'Serial Number', type: 'text' },
       { key: 'order_number', label: 'Order Number', type: 'text' },
       { key: 'year_of_construction', label: 'Year', type: 'number' },
-      { key: 'plant_location', label: 'Plant', type: 'select', options: [{ value: '', label: '— Select —' }, { value: 'USA', label: 'USA' }, { value: 'Mexico', label: 'Mexico' }] },
+      { key: 'plant_location', label: 'Plant', type: 'select', options: [{ value: '', label: '— Select —', labelKey: 'admin.selectPlaceholder' }, { value: 'USA', label: 'USA' }, { value: 'Mexico', label: 'Mexico' }] },
     ]
   },
   {
@@ -45,10 +45,10 @@ const FORM_SECTIONS: SectionDef[] = [
     fields: [
       { key: 'clamping_force_t', label: 'Clamping Force', type: 'number', unit: 't' },
       { key: 'two_k_type', label: '2K Type', type: 'select', options: [
-        { value: '', label: '1K (single component)' },
-        { value: '2k_turntable', label: '2K — Turntable' },
-        { value: '2k_no_turntable', label: '2K — No turntable' },
-        { value: 'parallel_injection', label: 'Parallel injection' },
+        { value: '', label: '1K (single component)', labelKey: 'admin.twoK.none' },
+        { value: '2k_turntable', label: '2K — Turntable', labelKey: 'admin.twoK.turntable' },
+        { value: '2k_no_turntable', label: '2K — No turntable', labelKey: 'admin.twoK.noTurntable' },
+        { value: 'parallel_injection', label: 'Parallel injection', labelKey: 'admin.twoK.parallel' },
       ] },
       { key: 'tool_center_distance_horizontal_mm', label: 'Tool-center distance (parallel)', type: 'number', unit: 'mm' },
       { key: 'centering_ring_nozzle_mm', label: 'Centering Ring Nozzle', type: 'number', unit: 'mm' },
@@ -140,7 +140,7 @@ const FORM_SECTIONS: SectionDef[] = [
     ]
   },
   {
-    titleKey: 'Lifecycle',
+    titleKey: 'admin.sectionLifecycle',
     fields: [
       { key: 'in_service_from',    label: 'In service from',    type: 'month' },
       { key: 'planned_scrap_from', label: 'Planned scrap from', type: 'month' },
@@ -150,6 +150,13 @@ const FORM_SECTIONS: SectionDef[] = [
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
   const { t } = useLanguage();
+  // Field label in the UI language; falls back to the English label / raw key.
+  const fieldLabel = (key: string, fallback?: string) => {
+    const tr = t(`field.${key}`);
+    return tr === `field.${key}` ? (fallback ?? key) : tr;
+  };
+  const [wamDragOver, setWamDragOver] = useState(false);
+  const [confirmDeleteWamId, setConfirmDeleteWamId] = useState<number | null>(null);
   const [tab, setTab] = useState<'machines' | 'import' | 'users'>('machines');
 
   // Machine list state
@@ -383,11 +390,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
     }
   };
 
-  const handleWamUpload = async () => {
-    if (!wamUploadFile || !editingMachine) return;
+  const handleWamUpload = async (dropped?: File) => {
+    const file = dropped || wamUploadFile;
+    if (!file || !editingMachine) return;
     setUploadingWam(true);
     try {
-      await fileService.upload(editingMachine.id, wamUploadFile, 'wam', 'WAM technical drawing');
+      await fileService.upload(editingMachine.id, file, 'wam', 'WAM technical drawing');
       setWamUploadFile(null);
       const [fRes, rRes] = await Promise.all([
         fileService.list(editingMachine.id),
@@ -397,7 +405,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       setRevisions(rRes.data);
       await loadMachines();
     } catch (e: any) {
-      setSaveMsg(`✗ ${e.response?.data?.error || 'WAM upload failed'}`);
+      setSaveMsg(`✗ ${e.response?.data?.error || t('admin.wamUploadFailed')}`);
     } finally {
       setUploadingWam(false);
     }
@@ -422,6 +430,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
     if (!editingMachine) return;
     try {
       await fileService.delete(fileId);
+      setConfirmDeleteWamId(null);
       const [fRes, rRes] = await Promise.all([
         fileService.list(editingMachine.id),
         machineService.getRevisions(editingMachine.id),
@@ -430,7 +439,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       setRevisions(rRes.data);
       await loadMachines();
     } catch (e: any) {
-      setSaveMsg(`✗ ${e.response?.data?.error || 'Delete failed'}`);
+      setSaveMsg(`✗ ${e.response?.data?.error || t('admin.wamDeleteFailed')}`);
     }
   };
 
@@ -470,6 +479,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
     m.manufacturer?.toLowerCase().includes(listSearch.toLowerCase())
   );
 
+  // Delete with a second click to confirm, like the history entries.
+  const wamDeleteButton = (fileId: number, compact: boolean) => {
+    const pad = compact ? '3px 8px' : '5px 12px';
+    const size = compact ? '11px' : '12px';
+    const radius = compact ? '4px' : '6px';
+    if (confirmDeleteWamId === fileId) {
+      return (
+        <>
+          <button onClick={() => handleWamDelete(fileId)}
+            style={{ padding: pad, fontSize: size, fontWeight: '600', color: '#fff', backgroundColor: '#dc2626', border: '1px solid #dc2626', borderRadius: radius, cursor: 'pointer' }}>
+            {t('admin.confirmDeleteRevision')}
+          </button>
+          <button onClick={() => setConfirmDeleteWamId(null)} aria-label={t('admin.cancel')} title={t('admin.cancel')}
+            style={{ padding: pad, fontSize: size, color: textSecondary, border: `1px solid ${borderColor}`, borderRadius: radius, backgroundColor: 'transparent', cursor: 'pointer' }}>✕</button>
+        </>
+      );
+    }
+    return (
+      <button onClick={() => setConfirmDeleteWamId(fileId)} aria-label={t('admin.wamDelete')} title={t('admin.wamDelete')}
+        style={{ padding: pad, fontSize: size, fontWeight: compact ? '400' : '600', color: '#ef4444', border: '1px solid #ef4444', borderRadius: radius, background: 'none', cursor: 'pointer' }}>
+        {compact ? '✕' : t('admin.delete')}
+      </button>
+    );
+  };
+
   const tabBtn = (active: boolean): React.CSSProperties => ({
     padding: '8px 16px', cursor: 'pointer', background: 'none', border: 'none',
     borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
@@ -489,7 +523,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       };
       if (f.type === 'month') {
         return (
-          <input
+          <input id={`fld-${f.key}`}
             type="month"
             style={style}
             value={formData[f.key] ?? ''}
@@ -499,28 +533,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       }
       if (f.type === 'boolean') {
         return (
-          <select style={style} value={formData[f.key] ?? ''} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}>
+          <select id={`fld-${f.key}`} style={style} value={formData[f.key] ?? ''} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}>
             <option value="">—</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
+            <option value="true">{t('admin.yes')}</option>
+            <option value="false">{t('admin.no')}</option>
           </select>
         );
       }
       if (f.type === 'select') {
         return (
-          <select style={style} value={formData[f.key] ?? ''} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}>
-            {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <select id={`fld-${f.key}`} style={style} value={formData[f.key] ?? ''} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}>
+            {f.options?.map(o => <option key={o.value} value={o.value}>{o.labelKey ? t(o.labelKey) : o.label}</option>)}
           </select>
         );
       }
       if (f.type === 'textarea') {
         return (
-          <textarea rows={2} style={{ ...style, resize: 'vertical' }}
+          <textarea id={`fld-${f.key}`} rows={2} style={{ ...style, resize: 'vertical' }}
             value={formData[f.key] ?? ''} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))} />
         );
       }
       return (
-        <input
+        <input id={`fld-${f.key}`}
           type={f.type === 'number' ? 'number' : 'text'}
           style={style}
           value={formData[f.key] ?? ''}
@@ -531,13 +565,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
 
     return (
       <div key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 6px', borderRadius: '4px', backgroundColor: suspBg, border: suspBorder, marginBottom: '3px' }}>
-        <label style={{ fontSize: '12px', color: textSecondary, width: '170px', flexShrink: 0, fontWeight: isSusp ? '600' : '400' }}>
-          {f.label}{f.unit ? ` (${f.unit})` : ''}{f.required ? ' *' : ''}
+        <label htmlFor={`fld-${f.key}`} style={{ fontSize: '12px', lineHeight: 1.3, color: textSecondary, width: '190px', flexShrink: 0, fontWeight: isSusp ? '600' : '400' }}>
+          {fieldLabel(f.key, f.label)}{f.unit ? ` (${f.unit})` : ''}{f.required ? ' *' : ''}
           {isSusp && <span style={{ marginLeft: '4px', color: '#f97316', fontSize: '10px' }}>⚑</span>}
         </label>
         {fieldInput()}
         <button
           title={t('admin.markSuspicious')}
+          aria-label={t('admin.markSuspicious')}
+          aria-pressed={isSusp}
           onClick={() => toggleSuspicious(f.key)}
           style={{
             flexShrink: 0, width: '24px', height: '24px', border: 'none', borderRadius: '4px', cursor: 'pointer',
@@ -610,6 +646,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
                     </div>
                     <button
                       onClick={e => startDelete(m, e)}
+                      aria-label={`${t('admin.delete')} ${m.internal_name}`} title={t('admin.delete')}
                       style={{ marginLeft: '6px', padding: '3px 6px', color: '#ef4444', background: 'none', border: `1px solid #ef4444`, borderRadius: '4px', cursor: 'pointer', fontSize: '11px', flexShrink: 0 }}
                     >✕</button>
                   </div>
@@ -697,7 +734,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
                     <h4 style={{ fontSize: '12px', fontWeight: '700', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
                       {t(section.titleKey)}
                     </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '0' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '0' }}>
                       {section.fields.map(f => renderFormField(f))}
                     </div>
                   </div>
@@ -715,16 +752,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
                       <div style={{ padding: '10px 12px', backgroundColor: darkMode ? '#111827' : '#f0f9ff', borderRadius: '6px', border: `1px solid ${borderColor}`, marginBottom: '10px' }}>
                         <div style={{ fontSize: '12px', fontWeight: '600', color: textSecondary, marginBottom: '6px' }}>{t('admin.wamCurrent')}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: '600', color: textPrimary }}>📄 {wamFiles[0].file_name}</div>
+                          <div style={{ minWidth: 0, marginRight: '10px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '600', color: textPrimary, overflowWrap: 'anywhere' }}>📄 {wamFiles[0].file_name}</div>
                             <div style={{ fontSize: '11px', color: textSecondary, marginTop: '2px' }}>
                               {(wamFiles[0].file_size / 1024).toFixed(0)} KB · {new Date(wamFiles[0].uploaded_at).toLocaleString()} · {wamFiles[0].username || 'Unknown'}
                             </div>
                           </div>
-                          <button onClick={() => handleWamDownload(wamFiles[0].id, wamFiles[0].file_name)}
-                            style={{ padding: '5px 12px', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '6px', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-                            ↓ {t('admin.download')}
-                          </button>
+                          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                            <button onClick={() => handleWamDownload(wamFiles[0].id, wamFiles[0].file_name)}
+                              style={{ padding: '5px 12px', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '6px', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                              ↓ {t('admin.download')}
+                            </button>
+                            {wamDeleteButton(wamFiles[0].id, false)}
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -732,13 +772,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
                     )}
 
                     {/* Upload new WAM */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: wamFiles.length > 1 ? '10px' : '0' }}>
-                      <label style={{ fontSize: '12px', fontWeight: '600', color: textSecondary, flexShrink: 0 }}>{t('admin.wamUpload')}:</label>
-                      <input type="file" onChange={e => setWamUploadFile(e.target.files?.[0] || null)}
+                    <div
+                      onDragOver={e => { e.preventDefault(); setWamDragOver(true); }}
+                      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setWamDragOver(false); }}
+                      onDrop={e => {
+                        e.preventDefault();
+                        setWamDragOver(false);
+                        const f = e.dataTransfer.files?.[0];
+                        if (f && !uploadingWam) handleWamUpload(f);
+                      }}
+                      style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', padding: '10px', borderRadius: '6px', border: `2px dashed ${wamDragOver ? '#3b82f6' : borderColor}`, backgroundColor: wamDragOver ? 'rgba(59,130,246,0.08)' : 'transparent', marginBottom: wamFiles.length > 1 ? '10px' : '0' }}>
+                      <div style={{ width: '100%', fontSize: '12px', color: textSecondary }}>{uploadingWam ? '...' : t('admin.wamDrop')}</div>
+                      <label htmlFor="wam-upload-input" style={{ fontSize: '12px', fontWeight: '600', color: textSecondary, flexShrink: 0 }}>{t('admin.wamUpload')}:</label>
+                      <input id="wam-upload-input" type="file" onChange={e => setWamUploadFile(e.target.files?.[0] || null)}
                         style={{ flex: 1, fontSize: '12px', color: textPrimary }} />
-                      <button onClick={handleWamUpload} disabled={!wamUploadFile || uploadingWam}
+                      <button onClick={() => handleWamUpload()} disabled={!wamUploadFile || uploadingWam}
                         style={{ padding: '5px 14px', backgroundColor: wamUploadFile && !uploadingWam ? '#3b82f6' : '#9ca3af', color: '#fff', border: 'none', borderRadius: '6px', cursor: wamUploadFile ? 'pointer' : 'not-allowed', fontSize: '12px', fontWeight: '600', flexShrink: 0 }}>
-                        {uploadingWam ? '...' : '↑ Upload'}
+                        {uploadingWam ? '...' : `↑ ${t('admin.upload')}`}
                       </button>
                     </div>
 
@@ -749,14 +799,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {wamFiles.slice(1).map((f: any) => (
                             <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', backgroundColor: darkMode ? '#111827' : '#f9fafb', borderRadius: '4px', border: `1px solid ${borderColor}` }}>
-                              <div style={{ fontSize: '12px', color: textSecondary }}>
+                              <div style={{ fontSize: '12px', color: textSecondary, minWidth: 0, marginRight: '10px', overflowWrap: 'anywhere' }}>
                                 📄 {f.file_name} · {(f.file_size / 1024).toFixed(0)} KB · {new Date(f.uploaded_at).toLocaleString()}
                               </div>
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                <button onClick={() => handleWamDownload(f.id, f.file_name)}
+                              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                <button onClick={() => handleWamDownload(f.id, f.file_name)} aria-label={t('admin.download')} title={t('admin.download')}
                                   style={{ padding: '3px 8px', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '4px', background: 'none', cursor: 'pointer', fontSize: '11px' }}>↓</button>
-                                <button onClick={() => handleWamDelete(f.id)}
-                                  style={{ padding: '3px 8px', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '4px', background: 'none', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                                {wamDeleteButton(f.id, true)}
                               </div>
                             </div>
                           ))}
@@ -870,7 +919,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
                                   const [oldVal, newVal] = changePart ? changePart.split(' → ') : [null, null];
                                   return (
                                     <div key={i} style={{ fontSize: '11px', display: 'flex', gap: '6px', alignItems: 'baseline' }}>
-                                      <span style={{ color: isSuspLine ? '#f97316' : textSecondary, fontFamily: 'monospace', flexShrink: 0 }}>{fieldPart}</span>
+                                      <span style={{ color: isSuspLine ? '#f97316' : textSecondary, fontFamily: 'monospace', flexShrink: 0 }}>{changePart ? fieldLabel(fieldPart) : fieldPart}</span>
                                       {oldVal !== null && newVal !== undefined && (
                                         <>
                                           <span style={{ color: '#ef4444', textDecoration: 'line-through', opacity: 0.8 }}>{oldVal}</span>
@@ -907,12 +956,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       {tab === 'import' && (
         <div style={{ padding: '24px', overflowY: 'auto' }}>
           <div style={{ backgroundColor: panelBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '24px', maxWidth: '560px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: textPrimary }}>Import Machines from Excel</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: textPrimary }}>{t('admin.importTitle')}</h3>
             <form onSubmit={handleImport}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: textSecondary, marginBottom: '6px' }}>Select Excel File</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: textSecondary, marginBottom: '6px' }}>{t('admin.importSelectFile')}</label>
               <input type="file" accept=".xlsx,.xls" onChange={e => setImportFile(e.target.files?.[0] || null)}
                 style={{ display: 'block', marginBottom: '12px', color: textPrimary }} />
-              <p style={{ fontSize: '12px', color: textSecondary, marginBottom: '16px' }}>Expected: MachineDataBase.xlsx or MachineList_USA.xlsx</p>
+              <p style={{ fontSize: '12px', color: textSecondary, marginBottom: '16px' }}>{t('admin.importExpected')}</p>
               {importMsg && (
                 <div style={{ padding: '10px 12px', borderRadius: '6px', marginBottom: '12px', fontSize: '13px', backgroundColor: importMsg.startsWith('✓') ? '#f0fdf4' : '#fef2f2', color: importMsg.startsWith('✓') ? '#14532d' : '#7f1d1d', border: `1px solid ${importMsg.startsWith('✓') ? '#22c55e' : '#ef4444'}` }}>
                   {importMsg}
@@ -920,7 +969,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
               )}
               <button type="submit" disabled={!importFile || importing}
                 style={{ padding: '9px 20px', backgroundColor: importFile && !importing ? '#3b82f6' : '#9ca3af', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: importFile && !importing ? 'pointer' : 'not-allowed', fontSize: '14px' }}>
-                {importing ? 'Importing...' : 'Import Machines'}
+                {importing ? t('admin.importing') : t('admin.importButton')}
               </button>
             </form>
           </div>
@@ -931,8 +980,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ darkMode = true }) => {
       {tab === 'users' && (
         <div style={{ padding: '24px', overflowY: 'auto' }}>
           <div style={{ backgroundColor: panelBg, border: `1px solid ${borderColor}`, borderRadius: '8px', padding: '24px', maxWidth: '560px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', color: textPrimary }}>User Management</h3>
-            <p style={{ color: textSecondary, marginBottom: '16px', fontSize: '14px' }}>User management UI coming soon. Current credentials:</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', color: textPrimary }}>{t('admin.usersTitle')}</h3>
+            <p style={{ color: textSecondary, marginBottom: '16px', fontSize: '14px' }}>{t('admin.usersSoon')}</p>
             <div style={{ backgroundColor: darkMode ? '#111827' : '#f9fafb', borderRadius: '6px', padding: '12px', fontSize: '13px', color: textPrimary }}>
               <div style={{ marginBottom: '6px' }}><strong>master</strong> — password: master123 — Full access</div>
               <div style={{ marginBottom: '6px' }}><strong>viewer_usa</strong> — password: viewer123 — USA read-only</div>
