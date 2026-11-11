@@ -23,21 +23,17 @@ export interface AuthRequest extends Request {
 }
 
 /**
- * Role mapping: convert admin panel roles to MachineDB roles
+ * Role mapping: convert admin panel roles to MachineDB roles.
+ *
+ * Everyone who can log in at the hub may read MachineDB (Christoph, 2026-11-11):
+ * machinedb_Admin -> master, anyone else with a valid SSO token -> viewer.
+ * Editing still needs machinedb_Admin from the AdminPanel.
  */
-function mapRoleToMachineDB(roles: SSOPayload['roles']): 'master' | 'viewer' | null {
-  for (const role of roles) {
-    if (role.system === 'machinedb') {
-      // Admin -> master; Viewer -> viewer
-      if (role.name === 'machinedb_Admin') {
-        return 'master';
-      }
-      if (role.name === 'machinedb_Viewer') {
-        return 'viewer';
-      }
-    }
-  }
-  return null;
+export function mapRoleToMachineDB(roles: SSOPayload['roles']): 'master' | 'viewer' {
+  const isAdmin = (roles || []).some(
+    (role) => role && role.system === 'machinedb' && role.name === 'machinedb_Admin',
+  );
+  return isAdmin ? 'master' : 'viewer';
 }
 
 /**
@@ -104,11 +100,6 @@ export async function ssoAuth(req: AuthRequest, res: Response, next: NextFunctio
 
     // Map roles to machinedb-specific role
     const mappedRole = mapRoleToMachineDB(payload.roles || []);
-
-    if (!mappedRole) {
-      res.status(403).json({ error: 'No valid machinedb role found' });
-      return;
-    }
 
     // Resolve to a LOCAL users.id so FK columns (created_by/updated_by/changed_by)
     // stay valid. The JWT sub is an AdminPanel id from a different id space and
